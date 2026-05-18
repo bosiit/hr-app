@@ -52,7 +52,7 @@ body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui
 .bp { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
 .bs { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
 .bd { background:linear-gradient(135deg,var(--red),#dc2626); color:#fff; }
-.bw { background:linear-gradient(135deg,var(--yellow),#d97706); color:#fff; }
+.bw { background:linear-gradient(135deg,var(--yellow),#d97706); color:#fff; }    
 .bg { background:var(--bg3); color:var(--text); border:1px solid var(--border); }
 .bsm { width:auto; padding:10px 18px; font-size:13px; margin-bottom:0; }
 .brow { display:flex; gap:10px; margin-bottom:10px; }
@@ -816,13 +816,74 @@ const S = {
 // ══════════════════════════════════════
 // MOCK DATA
 // ══════════════════════════════════════
-const EMPS = [
-  {id:'1925720342',name:'Алишер Каримов',status:'active',salary:600,balance:450,ci:true,co:false,late:false,ciTime:'09:47'},
-  {id:'1966271847',name:'Малика Юсупова',status:'active',salary:500,balance:500,ci:true,co:true,late:false,ciTime:'09:58'},
-  {id:'2289646',name:'Жавлон Рахимов',status:'active',salary:550,balance:400,ci:false,co:false,late:false,ciTime:null},
-  {id:'36537863',name:'Дилноза Хасанова',status:'remote',salary:480,balance:330,ci:true,co:false,late:true,ciTime:'10:28'},
-  {id:'5399138616',name:'Санжар Тошматов',status:'active',salary:700,balance:700,ci:false,co:false,late:false,ciTime:null},
-];
+const API_URL = 'https://script.google.com/macros/s/AKfycbwKQmse-MEoDtzmNfeNJjov-oTykzCA2Lj3k6ciwlFgb3IFk1zgoVyckeWSW31ko-h4/exec';
+const EMPS = [];
+
+async function loadEmployees() {
+  try {
+    const res = await fetch(API_URL + '?action=getEmployees', {mode:'cors'});
+    const data = await res.json();
+    if(data.ok) {
+      EMPS.length = 0;
+      data.employees.forEach(e => EMPS.push({
+        ...e, ci:false, co:false, late:false, ciTime:null
+      }));
+    }
+  } catch(e) { console.log('API error:', e); }
+}
+
+async function loadAttendanceData() {
+  try {
+    const res = await fetch(API_URL + '?action=getAttendance', {mode:'cors'});
+    const data = await res.json();
+    if(data.ok) {
+      EMPS.forEach(emp => {
+        const att = data.attendance[emp.id];
+        if(att) {
+          emp.ci = att.ci;
+          emp.co = att.co;
+          emp.late = att.late;
+          emp.ciTime = att.ciTime;
+        }
+      });
+    }
+  } catch(e) { console.log('Attendance error:', e); }
+}
+
+async function loadFinesData() {
+  if(!S.user) return;
+  try {
+    const res = await fetch(API_URL + '?action=getFines&telegramId=' + S.user.id, {mode:'cors'});
+    const data = await res.json();
+    if(data.ok) {
+      FINES.length = 0;
+      data.fines.forEach(f => FINES.push(f));
+    }
+  } catch(e) { console.log('Fines error:', e); }
+}
+
+async function loadAdvancesData() {
+  if(!S.user) return;
+  try {
+    const res = await fetch(API_URL + '?action=getAdvances&telegramId=' + S.user.id, {mode:'cors'});
+    const data = await res.json();
+    if(data.ok) {
+      ADVANCES.length = 0;
+      data.advances.forEach(a => ADVANCES.push(a));
+    }
+  } catch(e) { console.log('Advances error:', e); }
+}
+
+async function loadBirthdaysData() {
+  try {
+    const res = await fetch(API_URL + '?action=getBirthdays');
+    const data = await res.json();
+    if(data.ok) {
+      BIRTHDAYS.length = 0;
+      data.birthdays.forEach(b => BIRTHDAYS.push(b));
+    }
+  } catch(e) { console.log('Birthdays error:', e); }
+}
 const FINES = [
   {id:1,date:'18.05.2026',time:'10:32',amt:5,reason:'Check-in с фото',st:'pending',com:'Пробки на дороге'},
   {id:2,date:'15.05.2026',time:'11:05',amt:10,reason:'Check-in с фото',st:'active',com:''},
@@ -909,9 +970,12 @@ function applyLang(){
 // ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
-window.addEventListener('load', ()=>{
+window.addEventListener('load', async ()=>{
   if(window.Telegram?.WebApp){ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
   S.lang = localStorage.getItem('hr_lang')||'ru';
+await loadEmployees();
+await loadAttendanceData();
+await loadBirthdaysData();
   const saved = localStorage.getItem('hr_user');
   setTimeout(()=>{
     applyLang();
@@ -967,9 +1031,17 @@ function doLogin(){
   }, 800);
 }
 
-function enterApp(){
-  if(S.isAdmin){ showSc('sc-admin'); loadAdminHome(); }
-  else { showSc('sc-home'); loadHome(); }
+async function enterApp(){
+  if(S.isAdmin){
+    await loadBirthdaysData();
+    showSc('sc-admin');
+    loadAdminHome();
+  } else {
+    await loadFinesData();
+    await loadAdvancesData();
+    showSc('sc-home');
+    loadHome();
+  }
 }
 
 function doLogout(){
