@@ -976,6 +976,7 @@ window.addEventListener('load', async ()=>{
 await loadEmployees();
 await loadAttendanceData();
 await loadBirthdaysData();
+await loadNotifCount();  
   const saved = localStorage.getItem('hr_user');
   setTimeout(()=>{
     applyLang();
@@ -2077,13 +2078,60 @@ function addEmp(){
 // ══════════════════════════════════════
 // NOTIFICATIONS
 // ══════════════════════════════════════
-function showNotifs(){
-  showModal('Уведомления', `
-    <div class="empty">
-      <div class="ei">🔔</div>
-      <div class="et">Нет новых уведомлений</div>
-    </div>
-  `);
+
+  async function loadNotifCount(){
+  try {
+    const res = await fetch(API_URL + '?action=getNotifications', {mode:'cors'});
+    const data = await res.json();
+    if(data.ok){
+      const count = data.notifications.filter(n=>n.isNew).length;
+      const els = document.querySelectorAll('.dot');
+      els.forEach(el=>{
+        if(count > 0){ el.textContent=count; el.style.display='flex'; }
+        else el.style.display='none';
+      });
+    }
+  } catch(e) {}
+}
+  
+  async function showNotifs(){
+  showModal('Уведомления', `<div class="loader"><div class="spin"></div></div>`);
+  try {
+    const res = await fetch(API_URL + '?action=getNotifications', {mode:'cors'});
+    const data = await res.json();
+    if(data.ok && data.notifications.length > 0){
+      const newCount = data.notifications.filter(n=>n.isNew).length;
+      const el = document.getElementById('notif-count');
+      if(el){
+        if(newCount > 0){ el.textContent=newCount; el.style.display='flex'; }
+        else el.style.display='none';
+      }
+      document.getElementById('mod-body').innerHTML = data.notifications.map(n=>`
+        <div class="fc ${n.isNew?'pend':''}" style="margin-bottom:10px;">
+          <div class="fch">
+            <div class="fcd">${n.date}${n.time?' • '+n.time:''}</div>
+            <span class="bdg ${n.isNew?'y':'gr'}">${n.isNew?'Новое':'Прочитано'}</span>
+          </div>
+          <div class="fcr" style="font-weight:700;">${n.title}</div>
+          <div class="fcr">${n.text}</div>
+        </div>
+      `).join('');
+    } else {
+      document.getElementById('mod-body').innerHTML = `
+        <div class="empty">
+          <div class="ei">🔔</div>
+          <div class="et">Нет уведомлений</div>
+          <div class="es">Всё спокойно</div>
+        </div>
+      `;
+      const el = document.getElementById('notif-count');
+      if(el) el.style.display='none';
+    }
+  } catch(e) {
+    document.getElementById('mod-body').innerHTML = `
+      <div class="alrt e"><span>❌</span><span>Ошибка загрузки</span></div>
+    `;
+  }
 }
 
 // ══════════════════════════════════════
