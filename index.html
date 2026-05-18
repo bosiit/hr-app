@@ -301,7 +301,7 @@ select.inp { cursor:pointer; }
       <div class="hsub" id="home-date"></div>
     </div>
     <div class="hright">
-      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot" id="notif-count">2</span></button>
+      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot" id="notif-count" style="display:none;"></span>
       <button class="ibtn" onclick="toggleLang()">🌐</button>
     </div>
   </div>
@@ -602,7 +602,7 @@ select.inp { cursor:pointer; }
   <div class="hdr">
     <div style="flex:1;"><div class="htitle" id="t-admin-title">Панель администратора</div><div class="hsub" id="admin-date"></div></div>
     <div class="hright">
-      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot">3</span></button>
+      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot" style="display:none;"></span></button>
       <button class="ibtn" onclick="toggleLang()">🌐</button>
     </div>
   </div>
@@ -2079,17 +2079,9 @@ function addEmp(){
 // ══════════════════════════════════════
 function showNotifs(){
   showModal('Уведомления', `
-    <div class="fc pend" style="margin-bottom:10px;">
-      <div class="fch"><div class="fcd">18.05.2026 • 10:32</div><span class="bdg y">Новое</span></div>
-      <div class="fcr">💵 Новый запрос на аванс: Алишер Каримов — 200$</div>
-    </div>
-    <div class="fc pend" style="margin-bottom:10px;">
-      <div class="fch"><div class="fcd">18.05.2026 • 09:47</div><span class="bdg y">Новое</span></div>
-      <div class="fcr">⚠️ Запрос на отмену штрафа: Дилноза Хасанова — 5$</div>
-    </div>
-    <div class="fc" style="opacity:.6;margin-bottom:0;">
-      <div class="fch"><div class="fcd">17.05.2026</div><span class="bdg gr">Прочитано</span></div>
-      <div class="fcr">🚫 Жавлон Рахимов не пришёл</div>
+    <div class="empty">
+      <div class="ei">🔔</div>
+      <div class="et">Нет новых уведомлений</div>
     </div>
   `);
 }
