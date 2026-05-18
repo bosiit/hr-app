@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HR App</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --bg3: #1f2937;
+  --card: #1a2033; --border: #2d3748;
+  --accent: #3b82f6; --accent2: #6366f1;
+  --green: #10b981; --red: #ef4444; --yellow: #f59e0b; --orange: #f97316;
+  --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+  --r: 14px; --rs: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; overflow-x:hidden; }
+
+/* SCREENS */
+.sc { display:none; flex-direction:column; min-height:100vh; }
+.sc.on { display:flex; animation:fu .22s ease; }
+@keyframes fu { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* HEADER */
+.hdr { background:var(--bg2); padding:14px 18px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:200; }
+.hbk { width:36px; height:36px; background:var(--bg3); border:none; border-radius:10px; color:var(--text); font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.htitle { font-size:17px; font-weight:700; flex:1; }
+.hsub { font-size:12px; color:var(--text2); margin-top:1px; }
+.hright { display:flex; gap:8px; align-items:center; }
+.ibtn { position:relative; width:36px; height:36px; background:var(--bg3); border:none; border-radius:10px; color:var(--text); font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.ibtn .dot { position:absolute; top:-2px; right:-2px; width:16px; height:16px; background:var(--red); border-radius:50%; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; color:#fff; }
+
+/* BOTTOM NAV */
+.bnav { background:var(--bg2); border-top:1px solid var(--border); display:flex; padding:6px 0 20px; position:sticky; bottom:0; z-index:200; }
+.nitem { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 4px; cursor:pointer; border:none; background:transparent; color:var(--text3); transition:color .2s; }
+.nitem.on { color:var(--accent); }
+.nitem .nic { font-size:22px; line-height:1; }
+.nitem .nlb { font-size:10px; font-weight:600; }
+
+/* CONTENT */
+.cnt { flex:1; padding:18px; overflow-y:auto; }
+
+/* CARD */
+.card { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:18px; margin-bottom:14px; }
+.ctitle { font-size:11px; color:var(--text2); font-weight:700; text-transform:uppercase; letter-spacing:.7px; margin-bottom:14px; }
+
+/* BUTTONS */
+.btn { width:100%; padding:15px; border:none; border-radius:var(--r); font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:transform .1s; margin-bottom:10px; }
+.btn:active { transform:scale(.97); }
+.btn:last-child { margin-bottom:0; }
+.bp { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; }
+.bs { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
+.bd { background:linear-gradient(135deg,var(--red),#dc2626); color:#fff; }
+.bw { background:linear-gradient(135deg,var(--yellow),#d97706); color:#fff; }
+.bg { background:var(--bg3); color:var(--text); border:1px solid var(--border); }
+.bsm { width:auto; padding:10px 18px; font-size:13px; margin-bottom:0; }
+.brow { display:flex; gap:10px; margin-bottom:10px; }
+.brow .btn { margin-bottom:0; }
+.f1 { flex:1; }
+
+/* ACTION GRID */
+.agrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.ac { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:18px 14px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:10px; transition:transform .1s,border-color .2s; color:var(--text); text-align:center; }
+.ac:active { transform:scale(.96); }
+.ac.cin { border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.06); }
+.ac.cout { border-color:rgba(245,158,11,.4); background:rgba(245,158,11,.06); }
+.ac.cfin { border-color:rgba(239,68,68,.4); background:rgba(239,68,68,.06); }
+.ac.cadv { border-color:rgba(59,130,246,.4); background:rgba(59,130,246,.06); }
+.ac.can { border-color:rgba(99,102,241,.4); background:rgba(99,102,241,.06); }
+.ac.csal { border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.06); }
+.ac .aci { font-size:32px; }
+.ac .acl { font-size:13px; font-weight:700; }
+.ac .acs { font-size:11px; color:var(--text2); }
+
+/* STATUS BAR */
+.sbar { display:flex; gap:10px; margin-bottom:16px; }
+.sp { flex:1; background:var(--card); border:1px solid var(--border); border-radius:var(--rs); padding:12px 10px; text-align:center; }
+.sp.ok { border-color:rgba(16,185,129,.4); background:rgba(16,185,129,.08); }
+.sp.pend { border-color:rgba(245,158,11,.4); background:rgba(245,158,11,.08); }
+.sp.abs { border-color:rgba(239,68,68,.4); background:rgba(239,68,68,.08); }
+.sp .si { font-size:20px; margin-bottom:4px; }
+.sp .sl { font-size:10px; color:var(--text2); font-weight:600; text-transform:uppercase; letter-spacing:.4px; }
+.sp .sv { font-size:12px; font-weight:700; margin-top:2px; }
+
+/* STAT ROW */
+.srow { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.sb { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:16px; text-align:center; }
+.sbv { font-size:26px; font-weight:800; margin-bottom:4px; }
+.sbl { font-size:11px; color:var(--text2); font-weight:600; }
+
+/* LIST ITEMS */
+.li { display:flex; align-items:center; gap:14px; padding:13px 0; border-bottom:1px solid var(--border); }
+.li:last-child { border-bottom:none; padding-bottom:0; }
+.li:first-child { padding-top:0; }
+.lic { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+.lic.g { background:rgba(16,185,129,.15); }
+.lic.r { background:rgba(239,68,68,.15); }
+.lic.b { background:rgba(59,130,246,.15); }
+.lic.y { background:rgba(245,158,11,.15); }
+.lic.p { background:rgba(99,102,241,.15); }
+.lic.gr { background:var(--bg3); }
+.lii { flex:1; min-width:0; }
+.lit { font-size:15px; font-weight:600; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lis { font-size:12px; color:var(--text2); }
+.lir { text-align:right; flex-shrink:0; }
+.lirv { font-size:15px; font-weight:700; }
+.larr { color:var(--text3); font-size:18px; margin-left:4px; }
+
+/* BADGES */
+.bdg { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+.bdg.g { background:rgba(16,185,129,.15); color:var(--green); }
+.bdg.r { background:rgba(239,68,68,.15); color:var(--red); }
+.bdg.y { background:rgba(245,158,11,.15); color:var(--yellow); }
+.bdg.b { background:rgba(59,130,246,.15); color:var(--accent); }
+.bdg.gr { background:var(--bg3); color:var(--text2); }
+
+/* AVATAR */
+.av { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; font-weight:700; color:#fff; }
+.av.lg { width:72px; height:72px; font-size:28px; }
+
+/* INPUTS */
+.ig { margin-bottom:14px; }
+.il { font-size:12px; color:var(--text2); margin-bottom:7px; display:block; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+.inp { width:100%; background:var(--bg3); border:1.5px solid var(--border); border-radius:var(--rs); padding:13px 15px; color:var(--text); font-size:15px; outline:none; transition:border-color .2s; font-family:inherit; }
+.inp:focus { border-color:var(--accent); }
+textarea.inp { resize:none; line-height:1.5; }
+select.inp { cursor:pointer; }
+
+/* TABS */
+.tabs { display:flex; background:var(--bg2); border-radius:10px; padding:3px; margin-bottom:18px; gap:3px; border:1px solid var(--border); }
+.tab { flex:1; padding:9px 6px; border:none; border-radius:7px; background:transparent; color:var(--text2); font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
+.tab.on { background:var(--accent); color:#fff; }
+
+/* MODAL */
+.mov { position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:500; display:none; align-items:flex-end; }
+.mov.on { display:flex; }
+.mod { background:var(--bg2); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; border-top:1px solid var(--border); max-height:88vh; overflow-y:auto; }
+.mh { width:36px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+.mt { font-size:18px; font-weight:700; margin-bottom:18px; text-align:center; }
+
+/* TOAST */
+.toast { position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(30px); background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 22px; font-size:14px; font-weight:600; z-index:9999; transition:transform .3s,opacity .3s; white-space:nowrap; box-shadow:0 8px 32px rgba(0,0,0,.5); opacity:0; pointer-events:none; }
+.toast.on { transform:translateX(-50%) translateY(0); opacity:1; }
+.toast.s { border-color:var(--green); color:var(--green); }
+.toast.e { border-color:var(--red); color:var(--red); }
+.toast.i { border-color:var(--accent); color:var(--accent); }
+
+/* STEPS */
+.steps { display:flex; margin-bottom:20px; }
+.step { flex:1; text-align:center; position:relative; }
+.step::after { content:''; position:absolute; top:12px; left:50%; width:100%; height:2px; background:var(--border); }
+.step:last-child::after { display:none; }
+.step.done::after { background:var(--green); }
+.step.active::after { background:var(--accent); }
+.sdot { width:26px; height:26px; border-radius:50%; background:var(--bg3); border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; margin:0 auto 6px; position:relative; z-index:1; }
+.step.done .sdot { background:var(--green); border-color:var(--green); color:#fff; }
+.step.active .sdot { background:var(--accent); border-color:var(--accent); color:#fff; }
+.slbl { font-size:10px; color:var(--text2); font-weight:600; }
+.step.active .slbl { color:var(--accent); }
+
+/* ALERTS */
+.alrt { border-radius:var(--rs); padding:12px 14px; margin-bottom:14px; font-size:13px; font-weight:600; display:flex; align-items:flex-start; gap:10px; line-height:1.4; }
+.alrt.w { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.3); color:var(--yellow); }
+.alrt.e { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:var(--red); }
+.alrt.s { background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.3); color:var(--green); }
+.alrt.i { background:rgba(59,130,246,.1); border:1px solid rgba(59,130,246,.3); color:var(--accent); }
+
+/* MAP BOX */
+.mapb { background:var(--bg3); border:1.5px dashed var(--border); border-radius:var(--rs); height:130px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; margin-bottom:12px; cursor:pointer; transition:border-color .2s; }
+.mapb:hover { border-color:var(--accent); }
+.mapb .mi { font-size:36px; }
+.mapb .mt2 { font-size:13px; color:var(--text2); text-align:center; }
+
+/* FINE CARD */
+.fc { background:var(--bg3); border-radius:var(--rs); padding:14px; margin-bottom:10px; border-left:3px solid var(--red); }
+.fc.canc { border-left-color:var(--green); opacity:.7; }
+.fc.pend { border-left-color:var(--yellow); }
+.fch { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.fcd { font-size:13px; color:var(--text2); }
+.fca { font-size:16px; font-weight:800; color:var(--red); }
+.fc.canc .fca { color:var(--green); }
+.fcr { font-size:13px; color:var(--text2); margin-bottom:4px; }
+.fcc { font-size:12px; color:var(--text3); font-style:italic; }
+
+/* ADVANCE CARD */
+.advc { background:var(--bg3); border-radius:var(--rs); padding:14px; margin-bottom:10px; }
+.advh { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.adva { font-size:16px; font-weight:800; color:var(--green); }
+.advi { font-size:13px; color:var(--text2); }
+
+/* CONFIRM ROW */
+.cr { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
+.cr:last-child { border-bottom:none; }
+.ck { font-size:13px; color:var(--text2); }
+.cv { font-size:13px; font-weight:600; text-align:right; max-width:65%; }
+
+/* PROGRESS BAR */
+.prog { height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; margin-top:8px; }
+.pf { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); border-radius:3px; transition:width .5s; }
+
+/* EMPLOYEE ROW */
+.er { display:flex; align-items:center; gap:12px; padding:12px; background:var(--bg3); border-radius:var(--rs); margin-bottom:8px; cursor:pointer; border:1px solid transparent; transition:border-color .2s; }
+.er:active { border-color:var(--accent); }
+.era { width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; flex-shrink:0; color:#fff; }
+.eri { flex:1; min-width:0; }
+.ern { font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ers { font-size:12px; color:var(--text2); }
+
+/* ADMIN STAT GRID */
+.adm-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+.asc { background:var(--card); border:1px solid var(--border); border-radius:var(--r); padding:14px; cursor:pointer; transition:transform .1s,border-color .2s; }
+.asc:active { transform:scale(.97); }
+.ast { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.asv { font-size:24px; font-weight:800; margin-bottom:2px; }
+.asl { font-size:11px; color:var(--text2); font-weight:600; }
+
+/* SPINNER */
+.spin { width:40px; height:40px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:sp .8s linear infinite; margin:20px auto; }
+@keyframes sp { to{transform:rotate(360deg)} }
+
+/* DIVIDER */
+.dvd { height:1px; background:var(--border); margin:14px 0; }
+
+/* EMPTY STATE */
+.empty { text-align:center; padding:48px 20px; }
+.empty .ei { font-size:52px; margin-bottom:14px; }
+.empty .et { font-size:15px; font-weight:600; margin-bottom:6px; }
+.empty .es { font-size:13px; color:var(--text2); }
+
+/* HERO */
+.hero { background:linear-gradient(135deg,var(--bg2),var(--bg3)); border:1px solid var(--border); border-radius:var(--r); padding:20px; margin-bottom:16px; display:flex; align-items:center; gap:14px; }
+.hn { font-size:20px; font-weight:800; margin-bottom:3px; }
+.hro { font-size:13px; color:var(--text2); margin-bottom:8px; }
+
+/* CAMERA */
+#camvid { width:100%; border-radius:12px; background:#000; max-height:280px; object-fit:cover; display:none; }
+#phcanv { display:none; }
+#phprev { width:100%; border-radius:12px; margin-bottom:12px; max-height:260px; object-fit:cover; display:none; }
+
+/* MISC */
+.red { color:var(--red); } .green { color:var(--green); } .yellow { color:var(--yellow); } .blue { color:var(--accent); }
+.fw7 { font-weight:700; } .fw8 { font-weight:800; }
+.tc { text-align:center; } .tm { color:var(--text2); font-size:13px; }
+.mt8 { margin-top:8px; } .mt16 { margin-top:16px; } .mb0 { margin-bottom:0; } .mb8 { margin-bottom:8px; }
+.flx { display:flex; } .flx1 { flex:1; } .gap8 { gap:8px; } .aic { align-items:center; } .jcb { justify-content:space-between; }
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL -->
+<div class="mov" id="mov" onclick="cmod(event)">
+  <div class="mod" onclick="event.stopPropagation()">
+    <div class="mh"></div>
+    <div class="mt" id="mod-title"></div>
+    <div id="mod-body"></div>
+  </div>
+</div>
+
+<!-- ═══════════ SPLASH ═══════════ -->
+<div class="sc on" id="sc-splash" style="background:linear-gradient(135deg,#0d1117,#0a0f1e);align-items:center;justify-content:center;">
+  <div style="text-align:center;padding:40px;">
+    <div style="font-size:80px;margin-bottom:20px;animation:pulse 2s ease infinite;">🏢</div>
+    <h1 style="font-size:28px;font-weight:800;margin-bottom:8px;" id="t-splash-title">HR система</h1>
+    <p style="color:var(--text2);font-size:14px;" id="t-splash-sub">Учёт посещаемости сотрудников</p>
+    <div class="spin" style="margin-top:40px;"></div>
+  </div>
+</div>
+<style>@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}</style>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div class="sc" id="sc-login">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div style="font-size:64px;margin-bottom:16px;">🏢</div>
+      <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;" id="t-login-title">HR система</h1>
+      <p style="color:var(--text2);font-size:14px;" id="t-login-sub">Войдите в свой аккаунт</p>
+    </div>
+    <div class="card">
+      <div class="ig">
+        <label class="il" id="t-tid-label">Telegram ID</label>
+        <input class="inp" id="inp-tid" type="number" placeholder="123456789" style="font-size:20px;letter-spacing:1px;text-align:center;">
+      </div>
+      <div class="alrt i" style="margin-bottom:14px;">
+        <span>💡</span><span id="t-login-hint">Узнать ID: напишите /myid боту</span>
+      </div>
+      <button class="btn bp mb0" onclick="doLogin()" id="t-login-btn">Войти</button>
+    </div>
+    <button class="btn bg" style="margin-top:12px;" onclick="toggleLang()" id="t-lang-btn">🌐 O'zbek tilida</button>
+  </div>
+</div>
+
+<!-- ═══════════ EMP HOME ═══════════ -->
+<div class="sc" id="sc-home">
+  <div class="hdr">
+    <div style="flex:1;">
+      <div class="htitle" id="t-home-title">Главная</div>
+      <div class="hsub" id="home-date"></div>
+    </div>
+    <div class="hright">
+      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot" id="notif-count">2</span></button>
+      <button class="ibtn" onclick="toggleLang()">🌐</button>
+    </div>
+  </div>
+  <div class="cnt">
+    <div class="hero">
+      <div class="av lg" id="home-av">?</div>
+      <div style="flex:1;">
+        <div class="hn" id="home-name">—</div>
+        <div class="hro" id="home-role">—</div>
+        <div id="home-status-badge"></div>
+      </div>
+    </div>
+    <div class="sbar" id="home-sbar"></div>
+    <div class="agrid" id="home-actions"></div>
+    <div class="srow">
+      <div class="sb"><div class="sbv red" id="home-fines-val">0$</div><div class="sbl" id="t-home-fines-lbl">Штрафы</div></div>
+      <div class="sb"><div class="sbv green" id="home-bal-val">—</div><div class="sbl" id="t-home-bal-lbl">Остаток</div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <button class="nitem on" onclick="eTab('home')" id="en-home"><span class="nic">🏠</span><span class="nlb" id="t-nav-home">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')" id="en-checkin"><span class="nic">📸</span><span class="nlb" id="t-nav-checkin">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')" id="en-fines"><span class="nic">💰</span><span class="nlb" id="t-nav-fines">Штрафы</span></button>
+    <button class="nitem" onclick="eTab('more')" id="en-more"><span class="nic">⋯</span><span class="nlb" id="t-nav-more">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ EMP CHECK-IN FLOW ═══════════ -->
+<div class="sc" id="sc-checkin">
+  <div class="hdr">
+    <button class="hbk" onclick="eTab('home')">←</button>
+    <div><div class="htitle" id="t-ci-title">Check-in</div></div>
+  </div>
+  <div class="cnt">
+    <!-- Steps -->
+    <div class="steps" id="ci-steps">
+      <div class="step active" id="st1"><div class="sdot">1</div><div class="slbl" id="t-st1">Место</div></div>
+      <div class="step" id="st2"><div class="sdot">2</div><div class="slbl" id="t-st2">Фото</div></div>
+      <div class="step" id="st3"><div class="sdot">3</div><div class="slbl" id="t-st3">Коммент</div></div>
+      <div class="step" id="st4"><div class="sdot">4</div><div class="slbl" id="t-st4">Итог</div></div>
+    </div>
+
+    <!-- Today status -->
+    <div class="card mb8"><div class="ctitle" id="t-today-status">Статус сегодня</div><div id="ci-today"></div></div>
+
+    <!-- STEP 1: Location -->
+    <div id="ci-s1">
+      <div class="card">
+        <div class="ctitle">📍 Геолокация</div>
+        <div class="mapb" id="map-box" onclick="getLocation()">
+          <div class="mi">📍</div>
+          <div class="mt2" id="t-map-hint">Нажмите чтобы определить местоположение</div>
+        </div>
+        <div id="loc-result"></div>
+        <button class="btn bp mb0" onclick="getLocation()" id="t-btn-loc">📍 Определить местоположение</button>
+      </div>
+      <div class="brow">
+        <button class="btn bs f1 mb0" onclick="goStep(2)" id="btn-next1" disabled style="opacity:.4;">Далее →</button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Photo -->
+    <div id="ci-s2" style="display:none;">
+      <div class="card">
+        <div class="ctitle">📷 Фото</div>
+        <video id="camvid" autoplay playsinline></video>
+        <canvas id="phcanv"></canvas>
+        <img id="phprev" alt="">
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn bg bsm" onclick="openCam()" id="btn-opencam">📷 Камера</button>
+          <button class="btn bp bsm" onclick="snapPhoto()" id="btn-snap" style="display:none;">📸 Снять</button>
+          <button class="btn bg bsm" onclick="uploadPhoto()">🖼 Галерея</button>
+          <button class="btn bd bsm" onclick="resetPhoto()" id="btn-reset" style="display:none;">✕</button>
+        </div>
+        <input type="file" id="file-inp" accept="image/*" capture="user" style="display:none;" onchange="handleFile(event)">
+      </div>
+      <div class="brow">
+        <button class="btn bg f1 mb0" onclick="goStep(1)">← Назад</button>
+        <button class="btn bs f1 mb0" onclick="goStep(3)" id="btn-next2" disabled style="opacity:.4;">Далее →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Comment -->
+    <div id="ci-s3" style="display:none;">
+      <div class="card">
+        <div class="ctitle">💬 Комментарий</div>
+        <div class="ig"><textarea class="inp" id="inp-comment" rows="4" placeholder="Необязательно..."></textarea></div>
+        <button class="btn bg mb0" onclick="document.getElementById('inp-comment').value=''">➡️ Без комментария</button>
+      </div>
+      <div class="brow">
+        <button class="btn bg f1 mb0" onclick="goStep(2)">← Назад</button>
+        <button class="btn bs f1 mb0" onclick="goStep(4)">Далее →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Confirm -->
+    <div id="ci-s4" style="display:none;">
+      <div class="card"><div class="ctitle" id="t-confirm-title">✅ Проверьте данные</div><div id="confirm-data"></div></div>
+      <div id="fine-warning"></div>
+      <div class="brow">
+        <button class="btn bg f1 mb0" onclick="goStep(3)">← Назад</button>
+        <button class="btn bs f1 mb0" onclick="submitCI()" id="t-btn-confirm">✅ Подтвердить</button>
+      </div>
+    </div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem on"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem" onclick="eTab('more')"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ EMP FINES ═══════════ -->
+<div class="sc" id="sc-fines">
+  <div class="hdr"><button class="hbk" onclick="eTab('home')">←</button><div class="htitle" id="t-fines-title">Мои штрафы</div></div>
+  <div class="cnt">
+    <div class="tabs"><button class="tab on" onclick="loadFines('cur')" id="t-tab-cur">Этот месяц</button><button class="tab" onclick="loadFines('prev')" id="t-tab-prev">Прошлый</button></div>
+    <div class="srow">
+      <div class="sb"><div class="sbv red" id="fines-total">0$</div><div class="sbl" id="t-fines-total-lbl">Итого</div></div>
+      <div class="sb"><div class="sbv yellow" id="fines-count">0</div><div class="sbl" id="t-fines-count-lbl">Нарушений</div></div>
+    </div>
+    <div id="fines-list"></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem on"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem" onclick="eTab('more')"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ EMP MORE ═══════════ -->
+<div class="sc" id="sc-more">
+  <div class="hdr"><div class="htitle" id="t-more-title">Дополнительно</div><button class="ibtn" onclick="toggleLang()">🌐</button></div>
+  <div class="cnt">
+    <div class="card">
+      <div class="li" onclick="showSc('sc-advance');updAdvBal()"><div class="lic g">💵</div><div class="lii"><div class="lit" id="t-m-adv">Запросить аванс</div><div class="lis" id="t-m-adv-s">Запрос выплаты</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="showSc('sc-salary');loadSalary()"><div class="lic g">💳</div><div class="lii"><div class="lit" id="t-m-sal">Моя зарплата</div><div class="lis" id="t-m-sal-s">Баланс и история авансов</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="showSc('sc-anon')"><div class="lic p">📢</div><div class="lii"><div class="lit" id="t-m-anon">Анонимное сообщение</div><div class="lis" id="t-m-anon-s">Отправить анонимно</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="showSc('sc-schedule')"><div class="lic y">📅</div><div class="lii"><div class="lit" id="t-m-sch">Расписание и штрафы</div><div class="lis" id="t-m-sch-s">Время работы</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="showSc('sc-history');loadHistory()"><div class="lic b">📋</div><div class="lii"><div class="lit" id="t-m-hist">История посещений</div><div class="lis" id="t-m-hist-s">Check-in / Check-out</div></div><div class="larr">›</div></div>
+    </div>
+    <div class="card">
+      <div class="li" onclick="showSc('sc-profile');loadProfile()"><div class="lic gr">👤</div><div class="lii"><div class="lit" id="t-m-prof">Профиль</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="doLogout()"><div class="lic r">🚪</div><div class="lii"><div class="lit red" id="t-m-out">Выйти</div></div></div>
+    </div>
+    <p style="text-align:center;color:var(--text3);font-size:11px;margin-top:8px;">HR App v2.0 • 2026</p>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ ADVANCE ═══════════ -->
+<div class="sc" id="sc-advance">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-adv-title">Запрос аванса</div></div>
+  <div class="cnt">
+    <div class="card">
+      <div class="ig"><label class="il" id="t-adv-amount-lbl">Сумма ($)</label><input class="inp" id="inp-adv-amount" type="number" placeholder="100" style="font-size:26px;font-weight:800;text-align:center;" oninput="updAdvBal()"></div>
+      <div class="ig">
+        <label class="il" id="t-adv-method-lbl">Способ получения</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn bg mb0" id="meth-card" onclick="selMeth('card')">💳 Картой</button>
+          <button class="btn bg mb0" id="meth-cash" onclick="selMeth('cash')">💵 Наличными</button>
+        </div>
+      </div>
+      <div class="ig mb0"><label class="il">Комментарий</label><textarea class="inp" id="inp-adv-comment" rows="3" placeholder="Необязательно..."></textarea></div>
+    </div>
+    <div class="card" id="adv-bal-card" style="display:none;">
+      <div class="ctitle">Баланс</div>
+      <div class="cr"><div class="ck">Зарплата</div><div class="cv green fw7" id="adv-sal">—</div></div>
+      <div class="cr"><div class="ck">Текущий остаток</div><div class="cv green fw7" id="adv-bal">—</div></div>
+      <div class="cr"><div class="ck">После аванса</div><div class="cv" id="adv-after">—</div></div>
+    </div>
+    <button class="btn bs mb0" onclick="submitAdv()" id="t-adv-btn">✅ Отправить заявку</button>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ SALARY ═══════════ -->
+<div class="sc" id="sc-salary">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-sal-title">Моя зарплата</div></div>
+  <div class="cnt">
+    <div class="srow">
+      <div class="sb"><div class="sbv green" id="sal-amount">0$</div><div class="sbl" id="t-sal-lbl">Зарплата</div></div>
+      <div class="sb"><div class="sbv blue" id="sal-balance">0$</div><div class="sbl" id="t-bal-lbl">Остаток</div></div>
+    </div>
+    <div class="prog mb8" style="margin-bottom:18px;"><div class="pf" id="sal-prog" style="width:100%;"></div></div>
+    <div class="card"><div class="ctitle" id="t-adv-history">История авансов</div><div id="adv-list"></div></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ ANONYMOUS ═══════════ -->
+<div class="sc" id="sc-anon">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-anon-title">Анонимное сообщение</div></div>
+  <div class="cnt">
+    <div class="alrt i"><span>🔒</span><span id="t-anon-info">Сообщение отправляется анонимно в группу. Лимит: 3 в день.</span></div>
+    <div id="anon-limit-block"></div>
+    <div class="card">
+      <div class="ig mb0">
+        <label class="il" id="t-anon-lbl">Текст сообщения</label>
+        <textarea class="inp" id="inp-anon" rows="7" placeholder="Напишите сообщение..." oninput="updAnonCnt()"></textarea>
+        <div style="text-align:right;font-size:11px;color:var(--text2);margin-top:4px;" id="anon-cnt">0 / 500</div>
+      </div>
+    </div>
+    <button class="btn bp mb0" onclick="submitAnon()" id="t-anon-btn">📢 Отправить анонимно</button>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ SCHEDULE ═══════════ -->
+<div class="sc" id="sc-schedule">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-sch-title">Расписание</div></div>
+  <div class="cnt">
+    <div class="card">
+      <div class="ctitle">Рабочее время</div>
+      <div class="li"><div class="lic g">✅</div><div class="lii"><div class="lit">Без штрафа до</div><div class="lis">Вовремя</div></div><div class="lir"><div class="lirv green" id="v-fu">10:15</div></div></div>
+      <div class="li"><div class="lic y">⚠️</div><div class="lii"><div class="lit">Штраф период 1</div><div class="lis" id="v-f1t">10:15 — 11:00</div></div><div class="lir"><div class="lirv yellow" id="v-f1">5$</div></div></div>
+      <div class="li"><div class="lic r">🚨</div><div class="lii"><div class="lit">Штраф период 2</div><div class="lis" id="v-f2t">После 11:00</div></div><div class="lir"><div class="lirv red" id="v-f2">10$</div></div></div>
+      <div class="li"><div class="lic r">🚫</div><div class="lii"><div class="lit">Штраф за отсутствие Check-in</div></div><div class="lir"><div class="lirv red" id="v-nci">10$</div></div></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">Напоминания</div>
+      <div class="li"><div class="lic b">⏰</div><div class="lii"><div class="lit">За 5 минут до штрафа</div><div class="lis">Напоминание о Check-in</div></div><div><span class="bdg g">ВКЛ</span></div></div>
+      <div class="li"><div class="lic b">🔔</div><div class="lii"><div class="lit">Напоминание Check-out</div><div class="lis">В 20:00 и 22:00</div></div><div><span class="bdg g">ВКЛ</span></div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ HISTORY ═══════════ -->
+<div class="sc" id="sc-history">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-hist-title">История посещений</div></div>
+  <div class="cnt"><div id="hist-list"></div></div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════ PROFILE ═══════════ -->
+<div class="sc" id="sc-profile">
+  <div class="hdr"><button class="hbk" onclick="eTab('more')">←</button><div class="htitle" id="t-prof-title">Профиль</div></div>
+  <div class="cnt">
+    <div style="text-align:center;padding:24px 0 20px;">
+      <div class="av lg" style="margin:0 auto 14px;" id="prof-av">?</div>
+      <div style="font-size:22px;font-weight:800;margin-bottom:4px;" id="prof-name">—</div>
+      <div style="color:var(--text2);font-size:14px;" id="prof-role">—</div>
+    </div>
+    <div class="card">
+      <div class="li"><div class="lii"><div class="lis">Telegram ID</div><div class="lit" id="prof-tid">—</div></div></div>
+      <div class="li"><div class="lii"><div class="lis">Статус</div><div class="lit" id="prof-status">—</div></div></div>
+      <div class="li"><div class="lii"><div class="lis">Роль</div><div class="lit" id="prof-role2">—</div></div></div>
+    </div>
+    <button class="btn bd mb0" onclick="doLogout()">🚪 Выйти из аккаунта</button>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="eTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="eTab('checkin')"><span class="nic">📸</span><span class="nlb">Чекин</span></button>
+    <button class="nitem" onclick="eTab('fines')"><span class="nic">💰</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- ═══════════ ADMIN SCREENS ═════════ -->
+<!-- ═══════════════════════════════════ -->
+
+<!-- ADMIN HOME -->
+<div class="sc" id="sc-admin">
+  <div class="hdr">
+    <div style="flex:1;"><div class="htitle" id="t-admin-title">Панель администратора</div><div class="hsub" id="admin-date"></div></div>
+    <div class="hright">
+      <button class="ibtn" onclick="showNotifs()">🔔<span class="dot">3</span></button>
+      <button class="ibtn" onclick="toggleLang()">🌐</button>
+    </div>
+  </div>
+  <div class="cnt">
+    <div class="adm-g">
+      <div class="asc" onclick="aTab('att')"><div class="ast"><span style="font-size:24px;">✅</span><span style="color:var(--text3);">›</span></div><div class="asv green" id="adm-present">—</div><div class="asl" id="t-adm-present">Пришли сегодня</div></div>
+      <div class="asc" onclick="aTab('att')"><div class="ast"><span style="font-size:24px;">🚫</span><span style="color:var(--text3);">›</span></div><div class="asv red" id="adm-absent">—</div><div class="asl" id="t-adm-absent">Не пришли</div></div>
+      <div class="asc" onclick="aTab('fines')"><div class="ast"><span style="font-size:24px;">⚠️</span><span style="color:var(--text3);">›</span></div><div class="asv yellow" id="adm-late">—</div><div class="asl" id="t-adm-late">Опоздали</div></div>
+      <div class="asc" onclick="aTab('adv')"><div class="ast"><span style="font-size:24px;">💵</span><span style="color:var(--text3);">›</span></div><div class="asv blue" id="adm-advances">—</div><div class="asl" id="t-adm-adv">Заявки аванс</div></div>
+    </div>
+    <div class="card"><div class="ctitle" id="t-adm-emp-title">Сотрудники сегодня</div><div id="adm-emp-list"></div></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem on" onclick="aTab('home')" id="an-home"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')" id="an-emp"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')" id="an-fines"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem" onclick="aTab('more')" id="an-more"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN EMPLOYEES -->
+<div class="sc" id="sc-aemp">
+  <div class="hdr"><button class="hbk" onclick="aTab('home')">←</button><div class="htitle">Сотрудники</div><div class="hright"><button class="ibtn" onclick="showAddEmp()" style="width:auto;padding:0 12px;font-size:13px;font-weight:700;">＋ Добавить</button></div></div>
+  <div class="cnt">
+    <div class="tabs"><button class="tab on" onclick="filtEmps('all')">Все</button><button class="tab" onclick="filtEmps('active')">Активные</button><button class="tab" onclick="filtEmps('remote')">Удалённые</button></div>
+    <div id="emp-list"></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem on"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem" onclick="aTab('more')"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN FINES -->
+<div class="sc" id="sc-afines">
+  <div class="hdr"><button class="hbk" onclick="aTab('home')">←</button><div class="htitle">Штрафы сотрудников</div></div>
+  <div class="cnt"><div id="afines-list"></div></div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem on"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem" onclick="aTab('more')"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN MORE -->
+<div class="sc" id="sc-amore">
+  <div class="hdr"><div class="htitle">Управление</div><button class="ibtn" onclick="toggleLang()">🌐</button></div>
+  <div class="cnt">
+    <div class="card">
+      <div class="li" onclick="aTab('att')"><div class="lic b">📊</div><div class="lii"><div class="lit">Посещаемость</div><div class="lis">Кто пришёл сегодня</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="aTab('adv')"><div class="lic g">💵</div><div class="lii"><div class="lit">Авансы</div><div class="lis">Заявки и история</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="aTab('sal')"><div class="lic g">💳</div><div class="lii"><div class="lit">Зарплаты</div><div class="lis">Управление зарплатами</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="aTab('bd')"><div class="lic y">🎂</div><div class="lii"><div class="lit">Дни рождения</div><div class="lis">Список и управление</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="aTab('rep')"><div class="lic b">📈</div><div class="lii"><div class="lit">Отчёты</div><div class="lis">Статистика за месяц</div></div><div class="larr">›</div></div>
+      <div class="li" onclick="aTab('set')"><div class="lic gr">⚙️</div><div class="lii"><div class="lit">Настройки</div><div class="lis">Офис, штрафы, выходные</div></div><div class="larr">›</div></div>
+    </div>
+    <div class="card">
+      <div class="li" onclick="doLogout()"><div class="lic r">🚪</div><div class="lii"><div class="lit red">Выйти</div></div></div>
+    </div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN ATTENDANCE -->
+<div class="sc" id="sc-aatt">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Посещаемость</div></div>
+  <div class="cnt">
+    <div class="tabs"><button class="tab on" onclick="loadAtt('all')">Все</button><button class="tab" onclick="loadAtt('present')">Пришли</button><button class="tab" onclick="loadAtt('absent')">Не пришли</button><button class="tab" onclick="loadAtt('late')">Опоздали</button></div>
+    <div id="att-list"></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN ADVANCES -->
+<div class="sc" id="sc-aadv">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Авансы</div></div>
+  <div class="cnt">
+    <div class="tabs"><button class="tab on" onclick="loadAAdv('pending')">Ожидают</button><button class="tab" onclick="loadAAdv('approved')">Одобрены</button><button class="tab" onclick="loadAAdv('declined')">Отказано</button></div>
+    <div id="aadv-list"></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN SALARY -->
+<div class="sc" id="sc-asal">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Зарплаты</div></div>
+  <div class="cnt"><div id="asal-list"></div></div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN BIRTHDAYS -->
+<div class="sc" id="sc-abd">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Дни рождения</div><div class="hright"><button class="ibtn" onclick="showAddBD()" style="width:auto;padding:0 12px;font-size:13px;font-weight:700;">＋</button></div></div>
+  <div class="cnt"><div id="bd-list"></div></div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN REPORTS -->
+<div class="sc" id="sc-arep">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Отчёты</div></div>
+  <div class="cnt">
+    <div class="srow">
+      <div class="sb"><div class="sbv green" id="rep-pres">—</div><div class="sbl">Пришли</div></div>
+      <div class="sb"><div class="sbv red" id="rep-abs">—</div><div class="sbl">Не пришли</div></div>
+    </div>
+    <div class="srow">
+      <div class="sb"><div class="sbv yellow" id="rep-fines">—</div><div class="sbl">Штрафов ($)</div></div>
+      <div class="sb"><div class="sbv blue" id="rep-advs">—</div><div class="sbl">Авансов ($)</div></div>
+    </div>
+    <div class="card"><div class="ctitle">Штрафы по сотрудникам</div><div id="rep-flist"></div></div>
+    <div class="card"><div class="ctitle">Авансы по сотрудникам</div><div id="rep-alist"></div></div>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<!-- ADMIN SETTINGS -->
+<div class="sc" id="sc-aset">
+  <div class="hdr"><button class="hbk" onclick="aTab('more')">←</button><div class="htitle">Настройки</div></div>
+  <div class="cnt">
+    <div class="card">
+      <div class="ctitle">📍 Офис</div>
+      <div class="ig"><label class="il">Радиус (метры)</label><input class="inp" id="set-radius" type="number" value="100"></div>
+      <div class="ig"><label class="il">Широта (Latitude)</label><input class="inp" id="set-lat" placeholder="41.26464..."></div>
+      <div class="ig mb0"><label class="il">Долгота (Longitude)</label><input class="inp" id="set-lng" placeholder="69.23008..."></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">⚠️ Штрафы (по умолчанию)</div>
+      <div class="ig"><label class="il">Без штрафа до</label><input class="inp" id="set-fu" value="10:15"></div>
+      <div class="ig"><label class="il">Штраф 1 до</label><input class="inp" id="set-f1u" value="11:00"></div>
+      <div class="ig"><label class="il">Штраф 1 сумма ($)</label><input class="inp" id="set-f1a" type="number" value="5"></div>
+      <div class="ig"><label class="il">Штраф 2 сумма ($)</label><input class="inp" id="set-f2a" type="number" value="10"></div>
+      <div class="ig mb0"><label class="il">Штраф за отсутствие ($)</label><input class="inp" id="set-afa" type="number" value="10"></div>
+    </div>
+    <div class="card">
+      <div class="ctitle">🗓 Выходные дни (без штрафов)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button class="btn bp bsm" onclick="togDay(0)" id="d0">Вс</button>
+        <button class="btn bg bsm" onclick="togDay(1)" id="d1">Пн</button>
+        <button class="btn bg bsm" onclick="togDay(2)" id="d2">Вт</button>
+        <button class="btn bg bsm" onclick="togDay(3)" id="d3">Ср</button>
+        <button class="btn bg bsm" onclick="togDay(4)" id="d4">Чт</button>
+        <button class="btn bg bsm" onclick="togDay(5)" id="d5">Пт</button>
+        <button class="btn bp bsm" onclick="togDay(6)" id="d6">Сб</button>
+      </div>
+    </div>
+    <button class="btn bs mb0" onclick="saveSettings()">✅ Сохранить настройки</button>
+  </div>
+  <div class="bnav">
+    <button class="nitem" onclick="aTab('home')"><span class="nic">🏠</span><span class="nlb">Главная</span></button>
+    <button class="nitem" onclick="aTab('emp')"><span class="nic">👥</span><span class="nlb">Сотрудники</span></button>
+    <button class="nitem" onclick="aTab('fines')"><span class="nic">⚠️</span><span class="nlb">Штрафы</span></button>
+    <button class="nitem on"><span class="nic">⋯</span><span class="nlb">Ещё</span></button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+const ADMIN_IDS = ['77670451','5641084826'];
+const OFFICE = { lat:41.26464, lng:69.23008, r:100 };
+
+const S = {
+  lang: localStorage.getItem('hr_lang')||'ru',
+  user: null,
+  isAdmin: false,
+  hasCI: false,
+  hasCO: false,
+  ciStep: 1,
+  loc: null,
+  photo: null,
+  meth: null,
+  cam: null,
+  noFineDays: [0,6],
+  sets: { fu:'10:15', f1u:'11:00', f1:5, f2:10, af:10 },
+};
+
+// ══════════════════════════════════════
+// MOCK DATA
+// ══════════════════════════════════════
+const EMPS = [
+  {id:'1925720342',name:'Алишер Каримов',status:'active',salary:600,balance:450,ci:true,co:false,late:false,ciTime:'09:47'},
+  {id:'1966271847',name:'Малика Юсупова',status:'active',salary:500,balance:500,ci:true,co:true,late:false,ciTime:'09:58'},
+  {id:'2289646',name:'Жавлон Рахимов',status:'active',salary:550,balance:400,ci:false,co:false,late:false,ciTime:null},
+  {id:'36537863',name:'Дилноза Хасанова',status:'remote',salary:480,balance:330,ci:true,co:false,late:true,ciTime:'10:28'},
+  {id:'5399138616',name:'Санжар Тошматов',status:'active',salary:700,balance:700,ci:false,co:false,late:false,ciTime:null},
+];
+const FINES = [
+  {id:1,date:'18.05.2026',time:'10:32',amt:5,reason:'Check-in с фото',st:'pending',com:'Пробки на дороге'},
+  {id:2,date:'15.05.2026',time:'11:05',amt:10,reason:'Check-in с фото',st:'active',com:''},
+  {id:3,date:'10.05.2026',time:'23:59',amt:10,reason:'Не сделал Check-in',st:'active',com:''},
+  {id:4,date:'28.04.2026',time:'10:28',amt:5,reason:'Check-in с фото',st:'cancelled',com:'Уважительная причина'},
+];
+const ADVANCES = [
+  {id:1,empId:'1925720342',empName:'Алишер Каримов',date:'18.05.2026',amt:200,meth:'💳 Картой',st:'pending',ba:250},
+  {id:2,empId:'1925720342',empName:'Алишер Каримов',date:'17.05.2026',amt:100,meth:'💳 Картой',st:'approved',ba:450},
+  {id:3,empId:'1966271847',empName:'Малика Юсупова',date:'05.05.2026',amt:150,meth:'💵 Наличными',st:'approved',ba:550},
+];
+const BIRTHDAYS = [
+  {name:'Алишер Каримов',date:'25.05',tid:'1925720342'},
+  {name:'Малика Юсупова',date:'12.07',tid:'1966271847'},
+  {name:'Дилноза Хасанова',date:'03.03',tid:'36537863'},
+];
+
+// ══════════════════════════════════════
+// TRANSLATIONS
+// ══════════════════════════════════════
+const TR = {
+  ru: {
+    'splash-title':'HR система','splash-sub':'Учёт посещаемости сотрудников',
+    'login-title':'HR система','login-sub':'Войдите в свой аккаунт',
+    'tid-label':'Telegram ID','login-hint':'Узнать ID: напишите /myid боту',
+    'login-btn':'Войти','lang-btn':"🌐 O'zbek tilida",
+    'home-title':'Главная','home-fines-lbl':'Штрафы','home-bal-lbl':'Остаток',
+    'nav-home':'Главная','nav-checkin':'Чекин','nav-fines':'Штрафы','nav-more':'Ещё',
+    'ci-title':'Check-in','st1':'Место','st2':'Фото','st3':'Коммент','st4':'Итог',
+    'today-status':'Статус сегодня','map-hint':'Нажмите чтобы определить местоположение',
+    'btn-loc':'📍 Определить местоположение','confirm-title':'✅ Проверьте данные','btn-confirm':'✅ Подтвердить',
+    'fines-title':'Мои штрафы','tab-cur':'Этот месяц','tab-prev':'Прошлый','fines-total-lbl':'Итого','fines-count-lbl':'Нарушений',
+    'more-title':'Дополнительно',
+    'm-adv':'Запросить аванс','m-adv-s':'Запрос выплаты',
+    'm-sal':'Моя зарплата','m-sal-s':'Баланс и история авансов',
+    'm-anon':'Анонимное сообщение','m-anon-s':'Отправить анонимно',
+    'm-sch':'Расписание и штрафы','m-sch-s':'Время работы',
+    'm-hist':'История посещений','m-hist-s':'Check-in / Check-out',
+    'm-prof':'Профиль','m-out':'Выйти',
+    'adv-title':'Запрос аванса','adv-amount-lbl':'Сумма ($)','adv-method-lbl':'Способ получения','adv-history':'История авансов','adv-btn':'✅ Отправить заявку',
+    'sal-title':'Моя зарплата','sal-lbl':'Зарплата','bal-lbl':'Остаток',
+    'anon-title':'Анонимное сообщение','anon-info':'Сообщение отправляется анонимно. Лимит: 3 в день.','anon-lbl':'Текст сообщения','anon-btn':'📢 Отправить анонимно',
+    'sch-title':'Расписание','hist-title':'История посещений','prof-title':'Профиль',
+    'admin-title':'Панель администратора',
+    'adm-present':'Пришли сегодня','adm-absent':'Не пришли','adm-late':'Опоздали','adm-adv':'Заявки аванс',
+    'adm-emp-title':'Сотрудники сегодня',
+  },
+  uz: {
+    'splash-title':'HR tizim','splash-sub':'Davomat hisobi',
+    'login-title':'HR tizim','login-sub':'Hisobingizga kiring',
+    'tid-label':'Telegram ID','login-hint':"ID'ni bilish: /myid yozing",
+    'login-btn':'Kirish','lang-btn':'🌐 На русском',
+    'home-title':'Bosh sahifa','home-fines-lbl':'Jarimalar','home-bal-lbl':'Qoldiq',
+    'nav-home':'Bosh','nav-checkin':'Chekin','nav-fines':'Jarimalar','nav-more':'Yana',
+    'ci-title':'Check-in','st1':'Joylashuv','st2':'Rasm','st3':'Izoh','st4':'Tasdiq',
+    'today-status':'Bugungi holat','map-hint':'Joylashuvni aniqlash uchun bosing',
+    'btn-loc':'📍 Joylashuvni aniqlash','confirm-title':'✅ Tekshiring','btn-confirm':'✅ Tasdiqlash',
+    'fines-title':'Mening jarimalarim','tab-cur':'Bu oy','tab-prev':"O'tgan oy",'fines-total-lbl':'Jami','fines-count-lbl':'Buzilishlar',
+    'more-title':"Qo'shimcha",
+    'm-adv':"Avans so'rash",'m-adv-s':"To'lov so'rovi",
+    'm-sal':'Mening oyligim','m-sal-s':'Balans va avanslar',
+    'm-anon':'Anonim xabar','m-anon-s':'Anonim yuborish',
+    'm-sch':'Jadval va jarimalar','m-sch-s':'Ish vaqti',
+    'm-hist':'Tashrif tarixi','m-hist-s':'Check-in / Check-out',
+    'm-prof':'Profil','m-out':'Chiqish',
+    'adv-title':"Avans so'rovi",'adv-amount-lbl':'Summa ($)','adv-method-lbl':'Olish usuli','adv-history':'Avanslar tarixi','adv-btn':"✅ Ariza yuborish",
+    'sal-title':'Mening oyligim','sal-lbl':'Oylik','bal-lbl':'Qoldiq',
+    'anon-title':'Anonim xabar','anon-info':'Xabar anonim yuboriladi. Limit: 3 ta/kun.','anon-lbl':'Xabar matni','anon-btn':'📢 Anonim yuborish',
+    'sch-title':'Jadval','hist-title':'Tashrif tarixi','prof-title':'Profil',
+    'admin-title':'Admin paneli',
+    'adm-present':'Keldi','adm-absent':'Kelmadi','adm-late':'Kechikdi','adm-adv':'Avans arizalari',
+    'adm-emp-title':'Xodimlar bugun',
+  }
+};
+
+function t(k){ return (TR[S.lang]||{})[k] || k; }
+function se(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+function applyLang(){
+  Object.keys(TR.ru).forEach(k=>{
+    se('t-'+k, t(k));
+  });
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+window.addEventListener('load', ()=>{
+  if(window.Telegram?.WebApp){ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
+  S.lang = localStorage.getItem('hr_lang')||'ru';
+  const saved = localStorage.getItem('hr_user');
+  setTimeout(()=>{
+    applyLang();
+    if(saved){
+      try{
+        S.user = JSON.parse(saved);
+        S.isAdmin = ADMIN_IDS.includes(S.user.id);
+        enterApp();
+        return;
+      }catch(e){}
+    }
+    showSc('sc-login');
+  }, 1300);
+});
+
+function toggleLang(){
+  S.lang = S.lang==='ru'?'uz':'ru';
+  localStorage.setItem('hr_lang', S.lang);
+  applyLang();
+}
+
+// ══════════════════════════════════════
+// SCREENS
+// ══════════════════════════════════════
+function showSc(id){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  const el = document.getElementById(id);
+  if(el){ el.classList.add('on'); window.scrollTo(0,0); }
+}
+
+// ══════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════
+function doLogin(){
+  const tid = document.getElementById('inp-tid').value.trim();
+  if(!tid){ showToast('❌ Введите Telegram ID','e'); return; }
+  showToast('⏳ Входим...','i');
+  setTimeout(()=>{
+    const isAdmin = ADMIN_IDS.includes(tid);
+    const emp = EMPS.find(e=>e.id===tid);
+    if(isAdmin){
+      S.user = {id:tid, name:'Администратор', status:'active', isAdmin:true, salary:0, balance:0};
+    } else if(emp){
+      S.user = {...emp, isAdmin:false};
+    } else {
+      S.user = {id:tid, name:'Сотрудник', status:'active', isAdmin:false, salary:500, balance:500};
+    }
+    S.isAdmin = isAdmin;
+    localStorage.setItem('hr_user', JSON.stringify(S.user));
+    applyLang();
+    enterApp();
+    showToast('✅ Добро пожаловать!','s');
+  }, 800);
+}
+
+function enterApp(){
+  if(S.isAdmin){ showSc('sc-admin'); loadAdminHome(); }
+  else { showSc('sc-home'); loadHome(); }
+}
+
+function doLogout(){
+  localStorage.removeItem('hr_user');
+  S.user=null; S.isAdmin=false; S.hasCI=false; S.hasCO=false;
+  showSc('sc-login');
+  showToast('👋 До свидания!','i');
+}
+
+// ══════════════════════════════════════
+// EMPLOYEE TABS
+// ══════════════════════════════════════
+function eTab(tab){
+  ['home','checkin','fines','more'].forEach(t=>{
+    const n = document.getElementById('en-'+t);
+    if(n) n.classList.remove('on');
+  });
+  const n = document.getElementById('en-'+tab);
+  if(n) n.classList.add('on');
+  if(tab==='home'){ showSc('sc-home'); loadHome(); }
+  else if(tab==='checkin'){ showSc('sc-checkin'); loadCIScreen(); }
+  else if(tab==='fines'){ showSc('sc-fines'); loadFines('cur'); }
+  else if(tab==='more') showSc('sc-more');
+}
+
+// ══════════════════════════════════════
+// HOME
+// ══════════════════════════════════════
+function loadHome(){
+  if(!S.user) return;
+  const now = new Date();
+  se('home-date', now.toLocaleDateString(S.lang==='ru'?'ru-RU':'uz-UZ',{weekday:'long',day:'numeric',month:'long'}));
+  se('home-av', S.user.name.charAt(0).toUpperCase());
+  se('home-name', S.user.name);
+  se('home-role', S.user.status==='remote'?'🏠 Удалённо':'🏢 Офис');
+
+  const emp = EMPS.find(e=>e.id===S.user.id)||S.user;
+  S.hasCI = emp.ci||false;
+  S.hasCO = emp.co||false;
+
+  // Status bar
+  document.getElementById('home-sbar').innerHTML = `
+    <div class="sp ${S.hasCI?'ok':'pend'}">
+      <div class="si">${S.hasCI?'✅':'⏳'}</div>
+      <div class="sl">Check-in</div>
+      <div class="sv">${S.hasCI?'Выполнен':'Нужен'}</div>
+    </div>
+    <div class="sp ${S.hasCO?'ok':S.hasCI?'pend':'abs'}">
+      <div class="si">${S.hasCO?'✅':S.hasCI?'⏳':'—'}</div>
+      <div class="sl">Check-out</div>
+      <div class="sv">${S.hasCO?'Выполнен':'Нужен'}</div>
+    </div>
+  `;
+
+  // Actions
+  let acts = '';
+  if(!S.hasCI){
+    acts += `<div class="ac cin" onclick="eTab('checkin')"><div class="aci">📸</div><div class="acl">Check-in</div><div class="acs">Начать рабочий день</div></div>`;
+  } else if(!S.hasCO){
+    acts += `<div class="ac cout" onclick="eTab('checkin')"><div class="aci">🏁</div><div class="acl">Check-out</div><div class="acs">Завершить день</div></div>`;
+  } else {
+    acts += `<div class="ac cin" style="opacity:.5;cursor:default;"><div class="aci">🎉</div><div class="acl">День завершён</div><div class="acs">Отличная работа!</div></div>`;
+  }
+  acts += `<div class="ac cfin" onclick="eTab('fines')"><div class="aci">💰</div><div class="acl">Штрафы</div><div class="acs">История</div></div>`;
+  acts += `<div class="ac cadv" onclick="showSc('sc-advance');updAdvBal()"><div class="aci">💵</div><div class="acl">Аванс</div><div class="acs">Запросить выплату</div></div>`;
+  acts += `<div class="ac can" onclick="showSc('sc-anon')"><div class="aci">📢</div><div class="acl">Анонимно</div><div class="acs">Отправить сообщение</div></div>`;
+  document.getElementById('home-actions').innerHTML = acts;
+
+  const totalFines = FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
+  se('home-fines-val', totalFines+'$');
+  se('home-bal-val', (S.user.balance||0)+'$');
+}
+
+// ══════════════════════════════════════
+// CHECK-IN FLOW
+// ══════════════════════════════════════
+function loadCIScreen(){
+  S.ciStep=1;
+  renderSteps();
+  showCIStep(1);
+
+  const isCheckout = S.hasCI && !S.hasCO;
+  se('t-ci-title', isCheckout ? 'Check-out' : 'Check-in');
+
+  document.getElementById('ci-today').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span>${S.hasCI?'✅':'⏳'}</span>
+        <span style="font-size:14px;font-weight:600;">${S.hasCI?'Check-in выполнен':'Check-in нужен'}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span>${S.hasCO?'✅':S.hasCI?'⏳':'—'}</span>
+        <span style="font-size:14px;font-weight:600;">${S.hasCO?'Check-out выполнен':'Check-out нужен'}</span>
+      </div>
+    </div>
+  `;
+
+  // Remote — skip location
+  if(S.user?.status==='remote'){
+    S.loc = 'remote';
+    enableNext('btn-next1');
+    document.getElementById('map-box').innerHTML = `<div class="si">🏠</div><div class="mt2">Удалённый режим — геолокация пропущена</div>`;
+    document.getElementById('loc-result').innerHTML = `<div class="alrt s"><span>🏠</span><span>Удалённый режим активен</span></div>`;
+  }
+}
+
+function renderSteps(){
+  for(let i=1;i<=4;i++){
+    const el = document.getElementById('st'+i);
+    if(!el) continue;
+    el.className = 'step';
+    if(i < S.ciStep) el.className = 'step done';
+    else if(i === S.ciStep) el.className = 'step active';
+    el.querySelector('.sdot').textContent = i < S.ciStep ? '✓' : i;
+  }
+}
+
+function showCIStep(n){
+  ['s1','s2','s3','s4'].forEach((s,i)=>{
+    const el = document.getElementById('ci-'+s);
+    if(el) el.style.display = (i+1===n)?'block':'none';
+  });
+  S.ciStep = n;
+  renderSteps();
+  if(n===4) buildConfirmData();
+}
+
+function goStep(n){
+  if(n===2 && !S.loc){ showToast('❌ Сначала определите геолокацию','e'); return; }
+  if(n===3 && !S.photo){ showToast('❌ Сначала сделайте фото','e'); return; }
+  showCIStep(n);
+}
+
+// LOCATION
+function getLocation(){
+  if(S.user?.status==='remote'){
+    S.loc = 'remote';
+    enableNext('btn-next1');
+    showToast('🏠 Удалённый режим — геолокация пропущена','i');
+    return;
+  }
+  const btn = document.getElementById('t-btn-loc');
+  btn.textContent = '⏳ Определяем...';
+  btn.disabled = true;
+
+  if(!navigator.geolocation){
+    showToast('❌ Геолокация недоступна','e');
+    btn.textContent = t('btn-loc'); btn.disabled=false; return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      const {latitude:lat, longitude:lng} = pos.coords;
+      const dist = calcDist(lat, lng, OFFICE.lat, OFFICE.lng);
+
+      if(dist > OFFICE.r){
+        document.getElementById('loc-result').innerHTML = `
+          <div class="alrt e"><span>❌</span><span>Вы далеко от офиса (${Math.round(dist)}м). Check-in доступен только в радиусе ${OFFICE.r}м.</span></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn bg bsm f1" onclick="getLocation()" style="flex:1;">🔄 Повторить</button>
+            <button class="btn bp bsm f1" onclick="contactAdmin()" style="flex:1;">📞 Связаться</button>
+          </div>
+        `;
+        btn.textContent = t('btn-loc'); btn.disabled=false;
+        showToast('❌ Вы далеко от офиса','e'); return;
+      }
+
+      S.loc = {lat, lng, url:`https://maps.google.com/?q=${lat},${lng}`};
+      document.getElementById('map-box').innerHTML = `<div class="si">📍</div><div class="mt2" style="color:var(--green);">✅ Геолокация получена<br>${lat.toFixed(4)}, ${lng.toFixed(4)}<br>Расстояние: ${Math.round(dist)}м</div>`;
+      document.getElementById('loc-result').innerHTML = `<div class="alrt s"><span>✅</span><span>Геолокация подтверждена • ${Math.round(dist)}м от офиса</span></div>`;
+      enableNext('btn-next1');
+      btn.textContent = '✅ Местоположение определено'; btn.disabled=false;
+      showToast('✅ Геолокация получена','s');
+    },
+    ()=>{ showToast('❌ Ошибка геолокации','e'); btn.textContent=t('btn-loc'); btn.disabled=false; },
+    {enableHighAccuracy:true, timeout:10000}
+  );
+}
+
+function contactAdmin(){
+  showModal('Связаться с администратором',`
+    <div class="alrt i"><span>📍</span><span>Вы находитесь далеко от офиса. Если у вас уважительная причина, отправьте сообщение администратору.</span></div>
+    <div class="ig"><label class="il">Сообщение</label><textarea class="inp" id="contact-msg" rows="4" placeholder="Объясните причину..."></textarea></div>
+    <div class="brow">
+      <button class="btn bs f1 mb0" onclick="sendContactAdmin()">✅ Отправить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `);
+}
+
+function sendContactAdmin(){
+  const msg = document.getElementById('contact-msg')?.value.trim();
+  if(!msg){ showToast('❌ Напишите сообщение','e'); return; }
+  showToast('✅ Сообщение отправлено администратору','s');
+  cmod();
+}
+
+function calcDist(lat1,lng1,lat2,lng2){
+  const R=6371000, dL=(lat2-lat1)*Math.PI/180, dG=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+// CAMERA
+async function openCam(){
+  try{
+    const vid = document.getElementById('camvid');
+    S.cam = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+    vid.srcObject = S.cam; vid.style.display='block';
+    document.getElementById('btn-opencam').style.display='none';
+    document.getElementById('btn-snap').style.display='flex';
+  } catch(e){
+    showToast('Камера недоступна — используйте галерею','e');
+  }
+}
+
+function snapPhoto(){
+  const vid = document.getElementById('camvid');
+  const canv = document.getElementById('phcanv');
+  canv.width = vid.videoWidth; canv.height = vid.videoHeight;
+  canv.getContext('2d').drawImage(vid,0,0);
+  S.photo = canv.toDataURL('image/jpeg',.8);
+  stopCam();
+  showPhotoPreview();
+}
+
+function uploadPhoto(){ document.getElementById('file-inp').click(); }
+function handleFile(e){
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev=>{ S.photo = ev.target.result; showPhotoPreview(); };
+  r.readAsDataURL(f);
+}
+
+function showPhotoPreview(){
+  const img = document.getElementById('phprev');
+  img.src = S.photo; img.style.display='block';
+  document.getElementById('btn-reset').style.display='flex';
+  document.getElementById('btn-opencam').style.display='none';
+  document.getElementById('btn-snap').style.display='none';
+  enableNext('btn-next2');
+  showToast('✅ Фото готово','s');
+}
+
+function resetPhoto(){
+  S.photo=null; stopCam();
+  document.getElementById('phprev').style.display='none';
+  document.getElementById('camvid').style.display='none';
+  document.getElementById('btn-reset').style.display='none';
+  document.getElementById('btn-opencam').style.display='flex';
+  document.getElementById('btn-snap').style.display='none';
+  disableNext('btn-next2');
+}
+
+function stopCam(){
+  if(S.cam){ S.cam.getTracks().forEach(t=>t.stop()); S.cam=null; }
+  document.getElementById('camvid').style.display='none';
+}
+
+function enableNext(id){ const b=document.getElementById(id); if(b){b.disabled=false;b.style.opacity='1';} }
+function disableNext(id){ const b=document.getElementById(id); if(b){b.disabled=true;b.style.opacity='.4';} }
+
+// CONFIRM
+function buildConfirmData(){
+  const now = new Date();
+  const time = now.toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  const comment = document.getElementById('inp-comment').value.trim();
+  const isCheckout = S.hasCI && !S.hasCO;
+  const fine = isCheckout ? 0 : calcFine(now);
+  const locText = S.loc==='remote' ? '🏠 Удалённый режим' : (S.loc ? `${S.loc.lat.toFixed(4)}, ${S.loc.lng.toFixed(4)}` : '—');
+
+  document.getElementById('confirm-data').innerHTML = `
+    <div class="cr"><div class="ck">Сотрудник</div><div class="cv">${S.user.name}</div></div>
+    <div class="cr"><div class="ck">Действие</div><div class="cv">${isCheckout?'Check-out':'Check-in'}</div></div>
+    <div class="cr"><div class="ck">Время</div><div class="cv">${time}</div></div>
+    <div class="cr"><div class="ck">Геолокация</div><div class="cv" style="font-size:12px;">${locText}</div></div>
+    <div class="cr"><div class="ck">Фото</div><div class="cv green">✅ Готово</div></div>
+    ${comment?`<div class="cr"><div class="ck">Комментарий</div><div class="cv">${comment}</div></div>`:''}
+    ${fine>0?`<div class="cr"><div class="ck">Штраф</div><div class="cv red fw7">-${fine}$</div></div>`:''}
+  `;
+
+  const fw = document.getElementById('fine-warning');
+  if(fine>0 && comment){
+    fw.style.display='block';
+    fw.innerHTML=`<div class="alrt w"><span>⚠️</span><span>Запрос на отмену штрафа будет отправлен администратору с вашим комментарием</span></div>`;
+  } else if(fine>0){
+    fw.style.display='block';
+    fw.innerHTML=`<div class="alrt w"><span>⚠️</span><span>Будет начислен штраф ${fine}$. Добавьте комментарий для запроса отмены.</span></div>`;
+  } else {
+    fw.style.display='none';
+  }
+}
+
+function calcFine(now){
+  const h=now.getHours(), m=now.getMinutes(), cur=h*60+m;
+  const [fh,fm]=S.sets.fu.split(':').map(Number);
+  const [f1h,f1m]=S.sets.f1u.split(':').map(Number);
+  const free=fh*60+fm, f1=f1h*60+f1m;
+  if(cur<=free) return 0;
+  if(cur<f1) return S.sets.f1;
+  return S.sets.f2;
+}
+
+function submitCI(){
+  const btn = document.getElementById('t-btn-confirm');
+  btn.textContent='⏳ Сохраняем...'; btn.disabled=true;
+  const isCheckout = S.hasCI && !S.hasCO;
+
+  setTimeout(()=>{
+    if(isCheckout){ S.hasCO=true; showToast('✅ Check-out сохранён!','s'); }
+    else { S.hasCI=true; showToast('✅ Check-in сохранён!','s'); }
+
+    // Reset
+    S.loc=null; S.photo=null;
+    resetPhoto();
+    document.getElementById('inp-comment').value='';
+    btn.textContent='✅ Подтвердить'; btn.disabled=false;
+
+    // Update emp data
+    const emp = EMPS.find(e=>e.id===S.user.id);
+    if(emp){ if(isCheckout) emp.co=true; else emp.ci=true; }
+
+    eTab('home');
+  }, 1200);
+}
+
+// ══════════════════════════════════════
+// FINES
+// ══════════════════════════════════════
+function loadFines(period){
+  document.querySelectorAll('#sc-fines .tab').forEach((t,i)=>{
+    t.classList.toggle('on', i===(period==='cur'?0:1));
+  });
+
+  const list = FINES;
+  const total = list.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
+  se('fines-total', total+'$');
+  se('fines-count', list.length);
+
+  const el = document.getElementById('fines-list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="ei">✅</div><div class="et">Штрафов нет</div><div class="es">В этом месяце всё хорошо!</div></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(f=>`
+    <div class="fc ${f.st}">
+      <div class="fch"><div class="fcd">${f.date} • ${f.time}</div><div class="fca">${f.st==='cancelled'?'Отменён':'-'+f.amt+'$'}</div></div>
+      <div class="fcr">${f.reason}</div>
+      ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
+      <div style="margin-top:8px;">
+        <span class="bdg ${f.st==='cancelled'?'g':f.st==='pending'?'y':'r'}">${f.st==='cancelled'?'Отменён':f.st==='pending'?'На рассмотрении':'Активный'}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// ADVANCE
+// ══════════════════════════════════════
+function selMeth(m){
+  S.meth = m;
+  document.getElementById('meth-card').className = `btn ${m==='card'?'bp':'bg'} mb0`;
+  document.getElementById('meth-cash').className = `btn ${m==='cash'?'bp':'bg'} mb0`;
+  updAdvBal();
+}
+
+function updAdvBal(){
+  const sal = S.user?.salary||0;
+  const bal = S.user?.balance||0;
+  const amt = Number(document.getElementById('inp-adv-amount')?.value||0);
+  const card = document.getElementById('adv-bal-card');
+  if(card && sal>0) card.style.display='block';
+  se('adv-sal', sal+'$');
+  se('adv-bal', bal+'$');
+  const after = bal-amt;
+  const el = document.getElementById('adv-after');
+  if(el){ el.textContent=after+'$'; el.style.color=after<0?'var(--red)':'var(--text)'; }
+}
+
+function submitAdv(){
+  const amt = Number(document.getElementById('inp-adv-amount').value);
+  const bal = S.user?.balance||0;
+  if(!amt||amt<=0){ showToast('❌ Введите сумму','e'); return; }
+  if(!S.meth){ showToast('❌ Выберите способ получения','e'); return; }
+  if(amt>bal){ showToast(`❌ Недостаточно остатка. Доступно: ${bal}$`,'e'); return; }
+  showToast('⏳ Отправляем заявку...','i');
+  setTimeout(()=>{
+    showToast('✅ Заявка на аванс отправлена!','s');
+    document.getElementById('inp-adv-amount').value='';
+    S.meth=null;
+    document.getElementById('meth-card').className='btn bg mb0';
+    document.getElementById('meth-cash').className='btn bg mb0';
+    eTab('more');
+  }, 1000);
+}
+
+// ══════════════════════════════════════
+// SALARY
+// ══════════════════════════════════════
+function loadSalary(){
+  const sal=S.user?.salary||0, bal=S.user?.balance||0;
+  se('sal-amount', sal+'$');
+  se('sal-balance', bal+'$');
+  const pct = sal>0 ? Math.max(0,Math.min(100,bal/sal*100)) : 0;
+  const pg = document.getElementById('sal-prog');
+  if(pg) pg.style.width=pct+'%';
+
+  const list = ADVANCES.filter(a=>a.empId===S.user?.id && a.st==='approved');
+  const el = document.getElementById('adv-list');
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="ei">💳</div><div class="et">Авансов нет</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(a=>`
+    <div class="advc">
+      <div class="advh"><div class="advi">${a.date} • ${a.meth}</div><div class="adva">+${a.amt}$</div></div>
+      <div class="advi">Остаток после: ${a.ba}$</div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// ANONYMOUS
+// ══════════════════════════════════════
+function updAnonCnt(){
+  const ta = document.getElementById('inp-anon');
+  const cnt = document.getElementById('anon-cnt');
+  if(ta&&cnt) cnt.textContent=`${ta.value.length} / 500`;
+}
+
+function submitAnon(){
+  const text = document.getElementById('inp-anon').value.trim();
+  if(!text){ showToast('❌ Напишите сообщение','e'); return; }
+  if(text.length>500){ showToast('❌ Максимум 500 символов','e'); return; }
+  showToast('⏳ Отправляем...','i');
+  setTimeout(()=>{
+    showToast('✅ Сообщение отправлено анонимно!','s');
+    document.getElementById('inp-anon').value='';
+    updAnonCnt();
+    eTab('more');
+  }, 1000);
+}
+
+// ══════════════════════════════════════
+// HISTORY
+// ══════════════════════════════════════
+function loadHistory(){
+  const hist=[
+    {date:'18.05.2026',ci:'09:47',co:'18:32',st:'Вовремя'},
+    {date:'17.05.2026',ci:'10:20',co:'18:15',st:'Опоздал'},
+    {date:'16.05.2026',ci:'09:55',co:'18:48',st:'Вовремя'},
+    {date:'15.05.2026',ci:'11:05',co:'—',st:'Опоздал'},
+    {date:'14.05.2026',ci:'—',co:'—',st:'Не пришёл'},
+  ];
+  const el = document.getElementById('hist-list');
+  el.innerHTML = `<div class="card"><div class="ctitle">Май 2026</div>${hist.map(h=>`
+    <div class="li">
+      <div class="lic ${h.st==='Вовремя'?'g':h.st==='Опоздал'?'y':'r'}">${h.st==='Вовремя'?'✅':h.st==='Опоздал'?'⚠️':'🚫'}</div>
+      <div class="lii">
+        <div class="lit">${h.date}</div>
+        <div class="lis">IN: ${h.ci} • OUT: ${h.co}</div>
+      </div>
+      <span class="bdg ${h.st==='Вовремя'?'g':h.st==='Опоздал'?'y':'r'}">${h.st}</span>
+    </div>
+  `).join('')}</div>`;
+}
+
+// ══════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════
+function loadProfile(){
+  if(!S.user) return;
+  se('prof-av', S.user.name.charAt(0).toUpperCase());
+  se('prof-name', S.user.name);
+  se('prof-role', S.user.isAdmin?'Администратор':S.user.status==='remote'?'Удалённый сотрудник':'Офисный сотрудник');
+  se('prof-tid', S.user.id);
+  se('prof-status', S.user.status);
+  se('prof-role2', S.user.isAdmin?'Администратор':'Сотрудник');
+}
+
+// ══════════════════════════════════════
+// ADMIN TABS
+// ══════════════════════════════════════
+function aTab(tab){
+  ['home','emp','fines','more'].forEach(t=>{
+    const n=document.getElementById('an-'+t);
+    if(n) n.classList.remove('on');
+  });
+  const navMap={home:'home',emp:'emp',fines:'fines',more:'more',att:'more',adv:'more',sal:'more',bd:'more',rep:'more',set:'more'};
+  const n=document.getElementById('an-'+(navMap[tab]||'more'));
+  if(n) n.classList.add('on');
+
+  const scMap={home:'sc-admin',emp:'sc-aemp',fines:'sc-afines',more:'sc-amore',att:'sc-aatt',adv:'sc-aadv',sal:'sc-asal',bd:'sc-abd',rep:'sc-arep',set:'sc-aset'};
+  showSc(scMap[tab]||'sc-admin');
+
+  if(tab==='home') loadAdminHome();
+  else if(tab==='emp') loadEmps('all');
+  else if(tab==='fines') loadAFines();
+  else if(tab==='att') loadAtt('all');
+  else if(tab==='adv') loadAAdv('pending');
+  else if(tab==='sal') loadASal();
+  else if(tab==='bd') loadBDs();
+  else if(tab==='rep') loadRep();
+}
+
+// ══════════════════════════════════════
+// ADMIN HOME
+// ══════════════════════════════════════
+function loadAdminHome(){
+  const now=new Date();
+  se('admin-date', now.toLocaleDateString(S.lang==='ru'?'ru-RU':'uz-UZ',{weekday:'long',day:'numeric',month:'long'}));
+  const present=EMPS.filter(e=>e.ci).length;
+  const absent=EMPS.filter(e=>!e.ci).length;
+  const late=EMPS.filter(e=>e.late).length;
+  const pending=ADVANCES.filter(a=>a.st==='pending').length;
+  se('adm-present',`${present}/${EMPS.length}`);
+  se('adm-absent', absent);
+  se('adm-late', late);
+  se('adm-advances', pending);
+
+  document.getElementById('adm-emp-list').innerHTML = EMPS.map(e=>`
+    <div class="er" onclick="showEmpDetail('${e.id}')">
+      <div class="era">${e.name.charAt(0)}</div>
+      <div class="eri">
+        <div class="ern">${e.name}</div>
+        <div class="ers">${e.status==='remote'?'🏠 Удалённо':'🏢 Офис'} ${e.ciTime?'• IN: '+e.ciTime:''}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+        <span class="bdg ${e.ci?'g':'r'}">${e.ci?'IN':'—'}</span>
+        ${e.co?`<span class="bdg b">OUT</span>`:''}
+        ${e.late?`<span class="bdg y">⚠️</span>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════
+// ADMIN EMPLOYEES
+// ══════════════════════════════════════
+function loadEmps(filter){
+  document.querySelectorAll('#sc-aemp .tab').forEach((t,i)=>{
+    t.classList.toggle('on',['all','active','remote'][i]===filter);
+  });
+  let list=EMPS;
+  if(filter==='active') list=list.filter(e=>e.status==='active');
+  if(filter==='remote') list=list.filter(e=>e.status==='remote');
+
+  document.getElementById('emp-list').innerHTML = list.map(e=>`
+    <div class="er" onclick="showEmpDetail('${e.id}')">
+      <div class="era">${e.name.charAt(0)}</div>
+      <div class="eri">
+        <div class="ern">${e.name}</div>
+        <div class="ers">ID: ${e.id} • ${e.status==='remote'?'🏠 Удалённо':'🏢 Офис'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <span class="bdg ${e.status==='active'?'g':e.status==='remote'?'b':'r'}">${e.status}</span>
+        <span class="larr">›</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filtEmps(f){
+  document.querySelectorAll('#sc-aemp .tab').forEach((t,i)=>{
+    t.classList.toggle('on',['all','active','remote'][i]===f);
+  });
+  loadEmps(f);
+}
+
+function showEmpDetail(id){
+  const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник',id,salary:0,balance:0,status:'active'};
+  const empFines=FINES.filter(f=>f.st!=='cancelled');
+  const fTotal=empFines.reduce((s,f)=>s+f.amt,0);
+  showModal(emp.name, `
+    <div class="cr"><div class="ck">Telegram ID</div><div class="cv">${emp.id}</div></div>
+    <div class="cr"><div class="ck">Статус</div><div class="cv"><span class="bdg ${emp.status==='active'?'g':'b'}">${emp.status}</span></div></div>
+    <div class="cr"><div class="ck">Зарплата</div><div class="cv green fw7">${emp.salary||0}$</div></div>
+    <div class="cr"><div class="ck">Остаток</div><div class="cv">${emp.balance||0}$</div></div>
+    <div class="cr"><div class="ck">Штрафы (месяц)</div><div class="cv red fw7">${fTotal}$</div></div>
+    <div class="cr"><div class="ck">Check-in</div><div class="cv">${emp.ci?'✅ '+emp.ciTime:'❌ Не пришёл'}</div></div>
+    <div class="cr"><div class="ck">Check-out</div><div class="cv">${emp.co?'✅ Выполнен':'—'}</div></div>
+    <div class="dvd"></div>
+    <div class="brow">
+      <button class="btn bg bsm f1 mb0" onclick="showEditSal('${emp.id}')">✏️ Зарплата</button>
+      <button class="btn bp bsm f1 mb0" onclick="showReply('${emp.id}')">💬 Ответить</button>
+    </div>
+    <div class="brow" style="margin-top:8px;">
+      <button class="btn bg bsm f1 mb0" onclick="showEmpFines('${emp.id}')">⚠️ Штрафы</button>
+      <button class="btn bg bsm f1 mb0" onclick="showEmpAdvances('${emp.id}')">💵 Авансы</button>
+    </div>
+  `);
+}
+
+function showEmpFines(id){
+  const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник'};
+  cmod();
+  setTimeout(()=>showModal('Штрафы: '+emp.name, FINES.map(f=>`
+    <div class="fc ${f.st}">
+      <div class="fch"><div class="fcd">${f.date} ${f.time}</div><div class="fca">${f.st==='cancelled'?'Отменён':'-'+f.amt+'$'}</div></div>
+      <div class="fcr">${f.reason}</div>
+      ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
+    </div>
+  `).join('')||'<div class="empty"><div class="ei">✅</div><div class="et">Штрафов нет</div></div>'),50);
+}
+
+function showEmpAdvances(id){
+  const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник'};
+  const list=ADVANCES.filter(a=>a.empId===id);
+  cmod();
+  setTimeout(()=>showModal('Авансы: '+emp.name, list.map(a=>`
+    <div class="advc">
+      <div class="advh"><div class="advi">${a.date} • ${a.meth}</div><div class="adva">${a.amt}$</div></div>
+      <span class="bdg ${a.st==='approved'?'g':a.st==='pending'?'y':'r'}">${a.st==='approved'?'Одобрен':a.st==='pending'?'Ожидает':'Отказано'}</span>
+    </div>
+  `).join('')||'<div class="empty"><div class="ei">💵</div><div class="et">Авансов нет</div></div>'),50);
+}
+
+// ══════════════════════════════════════
+// ADMIN FINES
+// ══════════════════════════════════════
+function loadAFines(){
+  const pending = FINES.filter(f=>f.st==='pending');
+  const el = document.getElementById('afines-list');
+
+  let html = '';
+
+  if(pending.length){
+    html += `<div class="card"><div class="ctitle">⚠️ На рассмотрении (${pending.length})</div>`;
+    html += pending.map((f,i)=>`
+      <div class="fc pend" style="margin-bottom:12px;">
+        <div class="fch"><div class="fcd">${f.date} • ${f.time}</div><div class="fca">-${f.amt}$</div></div>
+        <div class="fcr">Алишер Каримов</div>
+        <div class="fcr">${f.reason}</div>
+        ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
+        <div class="brow" style="margin-top:10px;">
+          <button class="btn bs bsm f1 mb0" onclick="approveFine(${f.id})">✅ Отменить штраф</button>
+          <button class="btn bd bsm f1 mb0" onclick="declineFine(${f.id})">❌ Оставить</button>
+          <button class="btn bg bsm mb0" onclick="showReply('1925720342')">💬</button>
+        </div>
+      </div>
+    `).join('');
+    html += `</div>`;
+  }
+
+  html += `<div class="card"><div class="ctitle">Штрафы по сотрудникам</div>`;
+  html += EMPS.map(e=>{
+    const total = FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
+    return `<div class="li" onclick="showEmpFines('${e.id}')">
+      <div class="lic r">⚠️</div>
+      <div class="lii"><div class="lit">${e.name}</div><div class="lis">${e.status==='remote'?'Удалённо':'Офис'}</div></div>
+      <div class="lir"><div class="lirv red">${total}$</div></div>
+      <div class="larr">›</div>
+    </div>`;
+  }).join('');
+  html += `</div>`;
+
+  el.innerHTML = html;
+}
+
+function approveFine(id){
+  const f=FINES.find(x=>x.id===id);
+  if(f){ f.st='cancelled'; }
+  showToast('✅ Штраф отменён','s');
+  loadAFines();
+}
+
+function declineFine(id){
+  const f=FINES.find(x=>x.id===id);
+  if(f){ f.st='active'; }
+  showToast('❌ Штраф оставлен','e');
+  loadAFines();
+}
+
+// ══════════════════════════════════════
+// ATTENDANCE
+// ══════════════════════════════════════
+function loadAtt(filter){
+  document.querySelectorAll('#sc-aatt .tab').forEach((t,i)=>{
+    t.classList.toggle('on',['all','present','absent','late'][i]===filter);
+  });
+  let list=EMPS;
+  if(filter==='present') list=list.filter(e=>e.ci);
+  if(filter==='absent') list=list.filter(e=>!e.ci);
+  if(filter==='late') list=list.filter(e=>e.late);
+
+  document.getElementById('att-list').innerHTML = list.length ? list.map(e=>`
+    <div class="er" onclick="showEmpDetail('${e.id}')">
+      <div class="era" style="font-size:20px;">${e.ci?'✅':'🚫'}</div>
+      <div class="eri">
+        <div class="ern">${e.name}</div>
+        <div class="ers">${e.ci?`IN: ${e.ciTime}${e.co?' • OUT: Выполнен':''}${e.late?' • ⚠️ Опоздал':''}` : 'Не пришёл'}</div>
+      </div>
+      <span class="bdg ${e.ci?'g':'r'}">${e.ci?'IN':'—'}</span>
+    </div>
+  `).join('') : `<div class="empty"><div class="ei">✅</div><div class="et">Нет записей</div></div>`;
+}
+
+// ══════════════════════════════════════
+// ADMIN ADVANCES
+// ══════════════════════════════════════
+function loadAAdv(filter){
+  document.querySelectorAll('#sc-aadv .tab').forEach((t,i)=>{
+    t.classList.toggle('on',['pending','approved','declined'][i]===filter);
+  });
+  const list = ADVANCES.filter(a=>a.st===filter);
+  const el = document.getElementById('aadv-list');
+
+  if(!list.length){
+    el.innerHTML=`<div class="empty"><div class="ei">💵</div><div class="et">Нет записей</div></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(a=>`
+    <div class="advc">
+      <div class="advh">
+        <div>
+          <div style="font-size:14px;font-weight:700;">${a.empName}</div>
+          <div class="advi">${a.date} • ${a.meth}</div>
+        </div>
+        <div class="adva">${a.amt}$</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+        <span class="bdg ${a.st==='approved'?'g':a.st==='pending'?'y':'r'}">${a.st==='approved'?'Одобрен':a.st==='pending'?'Ожидает':'Отказано'}</span>
+        ${filter==='pending'?`
+          <div style="display:flex;gap:6px;">
+            <button class="btn bs bsm mb0" onclick="approveAdv(${a.id})">✅</button>
+            <button class="btn bd bsm mb0" onclick="declineAdv(${a.id})">❌</button>
+            <button class="btn bg bsm mb0" onclick="showReply('${a.empId}')">💬</button>
+          </div>
+        `:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function approveAdv(id){
+  const a=ADVANCES.find(x=>x.id===id);
+  if(a){ a.st='approved'; const emp=EMPS.find(e=>e.id===a.empId); if(emp) emp.balance-=a.amt; }
+  showToast('✅ Аванс подтверждён','s');
+  loadAAdv('pending');
+}
+
+function declineAdv(id){
+  const a=ADVANCES.find(x=>x.id===id);
+  if(a) a.st='declined';
+  showToast('❌ Аванс отклонён','e');
+  loadAAdv('pending');
+}
+
+// ══════════════════════════════════════
+// ADMIN SALARY
+// ══════════════════════════════════════
+function loadASal(){
+  document.getElementById('asal-list').innerHTML = `
+    <div class="card"><div class="ctitle">Зарплаты сотрудников</div>
+    ${EMPS.map(e=>`
+      <div class="li">
+        <div class="lic g">💳</div>
+        <div class="lii"><div class="lit">${e.name}</div><div class="lis">Остаток: ${e.balance}$</div></div>
+        <div class="lir">
+          <div class="lirv green">${e.salary}$</div>
+          <button class="btn bg bsm mb0" style="margin-top:4px;padding:6px 12px;" onclick="showEditSal('${e.id}')">✏️</button>
+        </div>
+      </div>
+    `).join('')}
+    </div>
+  `;
+}
+
+function showEditSal(id){
+  const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник',salary:0};
+  showModal('Зарплата: '+emp.name, `
+    <div class="ig"><label class="il">Текущая зарплата</label><input class="inp" value="${emp.salary}$" disabled></div>
+    <div class="ig"><label class="il">Новая зарплата ($)</label><input class="inp" id="new-sal-inp" type="number" placeholder="500"></div>
+    <div class="brow">
+      <button class="btn bs f1 mb0" onclick="saveSal('${id}')">✅ Сохранить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `);
+}
+
+function saveSal(id){
+  const val=Number(document.getElementById('new-sal-inp')?.value);
+  if(!val||val<=0){ showToast('❌ Введите корректную сумму','e'); return; }
+  const emp=EMPS.find(e=>e.id===id);
+  if(emp){ emp.salary=val; emp.balance=val; }
+  showToast('✅ Зарплата обновлена','s');
+  cmod();
+  loadASal();
+}
+
+// ══════════════════════════════════════
+// BIRTHDAYS
+// ══════════════════════════════════════
+function loadBDs(){
+  const today=new Date();
+  const todayStr=`${String(today.getDate()).padStart(2,'0')}.${String(today.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('bd-list').innerHTML = `
+    <div class="card"><div class="ctitle">🎂 Дни рождения</div>
+    ${BIRTHDAYS.map(b=>`
+      <div class="li">
+        <div class="lic y">${b.date===todayStr?'🎉':'🎂'}</div>
+        <div class="lii">
+          <div class="lit">${b.name}</div>
+          <div class="lis">${b.date}${b.date===todayStr?' • <span style="color:var(--green);font-weight:700;">Сегодня! 🎉</span>':''}</div>
+        </div>
+        <button class="btn bg bsm mb0" onclick="editBD('${b.tid}')">✏️</button>
+      </div>
+    `).join('')}
+    </div>
+  `;
+}
+
+function showAddBD(){
+  showModal('Добавить день рождения', `
+    <div class="ig"><label class="il">Telegram ID сотрудника</label><input class="inp" id="bd-tid" type="number" placeholder="123456789"></div>
+    <div class="ig"><label class="il">Дата (ДД.ММ)</label><input class="inp" id="bd-date" placeholder="25.05"></div>
+    <div class="brow">
+      <button class="btn bs f1 mb0" onclick="saveBD()">✅ Добавить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `);
+}
+
+function saveBD(){
+  const tid=document.getElementById('bd-tid')?.value;
+  const date=document.getElementById('bd-date')?.value;
+  if(!tid||!date){ showToast('❌ Заполните все поля','e'); return; }
+  const emp=EMPS.find(e=>e.id===tid);
+  BIRTHDAYS.push({name:emp?.name||'Сотрудник #'+tid.slice(-4), date, tid});
+  showToast('✅ День рождения добавлен','s');
+  cmod(); loadBDs();
+}
+
+function editBD(tid){
+  const b=BIRTHDAYS.find(x=>x.tid===tid);
+  showModal('Изменить ДР: '+(b?.name||''), `
+    <div class="ig"><label class="il">Новая дата (ДД.ММ)</label><input class="inp" id="bd-new" value="${b?.date||''}" placeholder="25.05"></div>
+    <div class="brow">
+      <button class="btn bs f1 mb0" onclick="updateBD('${tid}')">✅ Сохранить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `);
+}
+
+function updateBD(tid){
+  const val=document.getElementById('bd-new')?.value;
+  if(!val){ showToast('❌ Введите дату','e'); return; }
+  const b=BIRTHDAYS.find(x=>x.tid===tid);
+  if(b) b.date=val;
+  showToast('✅ Дата обновлена','s');
+  cmod(); loadBDs();
+}
+
+// ══════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════
+function loadRep(){
+  const present=EMPS.filter(e=>e.ci).length;
+  const absent=EMPS.length-present;
+  const fTotal=FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
+  const aTotal=ADVANCES.filter(a=>a.st==='approved').reduce((s,a)=>s+a.amt,0);
+  se('rep-pres',present);
+  se('rep-abs',absent);
+  se('rep-fines',fTotal+'$');
+  se('rep-advs',aTotal+'$');
+
+  document.getElementById('rep-flist').innerHTML = EMPS.map(e=>`
+    <div class="li">
+      <div class="lii"><div class="lit">${e.name}</div><div class="lis">${e.status}</div></div>
+      <div class="lir"><div class="lirv red">${FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0)}$</div></div>
+    </div>
+  `).join('');
+
+  document.getElementById('rep-alist').innerHTML = EMPS.map(e=>{
+    const total=ADVANCES.filter(a=>a.empId===e.id&&a.st==='approved').reduce((s,a)=>s+a.amt,0);
+    return `<div class="li">
+      <div class="lii"><div class="lit">${e.name}</div></div>
+      <div class="lir"><div class="lirv blue">${total}$</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════
+function togDay(d){
+  const btn=document.getElementById('d'+d);
+  const idx=S.noFineDays.indexOf(d);
+  if(idx>=0){ S.noFineDays.splice(idx,1); btn.className='btn bg bsm'; }
+  else { S.noFineDays.push(d); btn.className='btn bp bsm'; }
+}
+
+function saveSettings(){
+  S.sets.fu=document.getElementById('set-fu')?.value||'10:15';
+  S.sets.f1u=document.getElementById('set-f1u')?.value||'11:00';
+  S.sets.f1=Number(document.getElementById('set-f1a')?.value||5);
+  S.sets.f2=Number(document.getElementById('set-f2a')?.value||10);
+  S.sets.af=Number(document.getElementById('set-afa')?.value||10);
+  se('v-fu',S.sets.fu);
+  se('v-f1',S.sets.f1+'$');
+  se('v-f2',S.sets.f2+'$');
+  se('v-nci',S.sets.af+'$');
+  se('v-f1t',`${S.sets.fu} — ${S.sets.f1u}`);
+  se('v-f2t',`После ${S.sets.f1u}`);
+  showToast('✅ Настройки сохранены','s');
+}
+
+// ══════════════════════════════════════
+// REPLY
+// ══════════════════════════════════════
+function showReply(tid){
+  const emp=EMPS.find(e=>e.id===tid);
+  cmod();
+  setTimeout(()=>showModal('Ответить: '+(emp?.name||tid), `
+    <div class="ig"><label class="il">Telegram ID: ${tid}</label><textarea class="inp" id="reply-txt" rows="4" placeholder="Напишите сообщение..."></textarea></div>
+    <div class="brow">
+      <button class="btn bp f1 mb0" onclick="sendReply('${tid}')">💬 Отправить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `), 50);
+}
+
+function sendReply(tid){
+  const txt=document.getElementById('reply-txt')?.value.trim();
+  if(!txt){ showToast('❌ Напишите сообщение','e'); return; }
+  showToast('✅ Сообщение отправлено сотруднику','s');
+  cmod();
+}
+
+// ══════════════════════════════════════
+// ADD EMPLOYEE
+// ══════════════════════════════════════
+function showAddEmp(){
+  showModal('Добавить сотрудника', `
+    <div class="ig"><label class="il">Telegram ID</label><input class="inp" id="new-tid" type="number" placeholder="123456789"></div>
+    <div class="ig"><label class="il">Имя Фамилия</label><input class="inp" id="new-name" placeholder="Имя Фамилия"></div>
+    <div class="ig"><label class="il">Статус</label>
+      <select class="inp" id="new-status">
+        <option value="active">Активный (офис)</option>
+        <option value="remote">Удалённый</option>
+      </select>
+    </div>
+    <div class="ig mb0"><label class="il">Зарплата ($)</label><input class="inp" id="new-salary" type="number" placeholder="500"></div>
+    <div class="brow" style="margin-top:14px;">
+      <button class="btn bs f1 mb0" onclick="addEmp()">✅ Добавить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `);
+}
+
+function addEmp(){
+  const tid=document.getElementById('new-tid')?.value;
+  const name=document.getElementById('new-name')?.value;
+  const status=document.getElementById('new-status')?.value;
+  const salary=Number(document.getElementById('new-salary')?.value||0);
+  if(!tid||!name){ showToast('❌ Заполните обязательные поля','e'); return; }
+  EMPS.push({id:tid,name,status,salary,balance:salary,ci:false,co:false,late:false,ciTime:null});
+  showToast('✅ Сотрудник добавлен','s');
+  cmod();
+  loadEmps('all');
+}
+
+// ══════════════════════════════════════
+// NOTIFICATIONS
+// ══════════════════════════════════════
+function showNotifs(){
+  showModal('Уведомления', `
+    <div class="fc pend" style="margin-bottom:10px;">
+      <div class="fch"><div class="fcd">18.05.2026 • 10:32</div><span class="bdg y">Новое</span></div>
+      <div class="fcr">💵 Новый запрос на аванс: Алишер Каримов — 200$</div>
+    </div>
+    <div class="fc pend" style="margin-bottom:10px;">
+      <div class="fch"><div class="fcd">18.05.2026 • 09:47</div><span class="bdg y">Новое</span></div>
+      <div class="fcr">⚠️ Запрос на отмену штрафа: Дилноза Хасанова — 5$</div>
+    </div>
+    <div class="fc" style="opacity:.6;margin-bottom:0;">
+      <div class="fch"><div class="fcd">17.05.2026</div><span class="bdg gr">Прочитано</span></div>
+      <div class="fcr">🚫 Жавлон Рахимов не пришёл</div>
+    </div>
+  `);
+}
+
+// ══════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════
+function showModal(title, body){
+  se('mod-title', title);
+  document.getElementById('mod-body').innerHTML = body;
+  document.getElementById('mov').classList.add('on');
+}
+
+function cmod(e){
+  if(!e || e.target===document.getElementById('mov'))
+    document.getElementById('mov').classList.remove('on');
+}
+
+// ══════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════
+function showToast(msg, type){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast on ' + (type||'');
+  clearTimeout(window._tt);
+  window._tt = setTimeout(()=>el.classList.remove('on'), 2800);
+}
+</script>
+</body>
+</html>
