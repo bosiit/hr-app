@@ -974,9 +974,11 @@ window.addEventListener('load', async ()=>{
   if(window.Telegram?.WebApp){ Telegram.WebApp.ready(); Telegram.WebApp.expand(); }
   S.lang = localStorage.getItem('hr_lang')||'ru';
 await loadEmployees();
-await loadAttendanceData();
-await loadBirthdaysData();
-await loadNotifCount();  
+setTimeout(async ()=>{
+  await loadAttendanceData();
+  await loadBirthdaysData();
+  await loadNotifCount();
+}, 500);  
   const saved = localStorage.getItem('hr_user');
   setTimeout(()=>{
     applyLang();
