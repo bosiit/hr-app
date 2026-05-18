@@ -1732,43 +1732,50 @@ function showEmpAdvances(id){
 // ══════════════════════════════════════
 // ADMIN FINES
 // ══════════════════════════════════════
-function loadAFines(){
-  const pending = FINES.filter(f=>f.st==='pending');
+async function loadAFines(){
   const el = document.getElementById('afines-list');
-
-  let html = '';
-
-  if(pending.length){
-    html += `<div class="card"><div class="ctitle">⚠️ На рассмотрении (${pending.length})</div>`;
-    html += pending.map((f,i)=>`
-      <div class="fc pend" style="margin-bottom:12px;">
-        <div class="fch"><div class="fcd">${f.date} • ${f.time}</div><div class="fca">-${f.amt}$</div></div>
-        <div class="fcr">Алишер Каримов</div>
-        <div class="fcr">${f.reason}</div>
-        ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
-        <div class="brow" style="margin-top:10px;">
-          <button class="btn bs bsm f1 mb0" onclick="approveFine(${f.id})">✅ Отменить штраф</button>
-          <button class="btn bd bsm f1 mb0" onclick="declineFine(${f.id})">❌ Оставить</button>
-          <button class="btn bg bsm mb0" onclick="showReply('1925720342')">💬</button>
+  el.innerHTML = `<div class="loader"><div class="spin"></div></div>`;
+  try {
+    const res = await fetch(API_URL + '?action=getAdminFines', {mode:'cors'});
+    const data = await res.json();
+    if(!data.ok) throw new Error();
+    const pending = data.fines.filter(f=>f.st==='pending');
+    const all = data.fines;
+    let html = '';
+    if(pending.length){
+      html += `<div class="card"><div class="ctitle">⚠️ На рассмотрении (${pending.length})</div>`;
+      html += pending.map(f=>`
+        <div class="fc pend" style="margin-bottom:12px;">
+          <div class="fch"><div class="fcd">${f.date} • ${f.time}</div><div class="fca">-${f.amt}$</div></div>
+          <div class="fcr fw7">${f.empName}</div>
+          <div class="fcr">${f.reason}</div>
+          ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
+          <div class="brow" style="margin-top:10px;">
+            <button class="btn bs bsm f1 mb0" onclick="approveFine(${f.id})">✅ Отменить</button>
+            <button class="btn bd bsm f1 mb0" onclick="declineFine(${f.id})">❌ Оставить</button>
+            <button class="btn bg bsm mb0" onclick="showReply('${f.empId}')">💬</button>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+      html += `</div>`;
+    }
+    html += `<div class="card"><div class="ctitle">Все штрафы этого месяца</div>`;
+    if(all.length){
+      html += all.map(f=>`
+        <div class="fc ${f.st}" style="margin-bottom:8px;">
+          <div class="fch"><div class="fcd">${f.date} • ${f.empName}</div><div class="fca">${f.st==='cancelled'?'Отменён':'-'+f.amt+'$'}</div></div>
+          <div class="fcr">${f.reason}</div>
+          ${f.com?`<div class="fcc">💬 "${f.com}"</div>`:''}
+        </div>
+      `).join('');
+    } else {
+      html += `<div class="empty"><div class="ei">✅</div><div class="et">Штрафов нет</div></div>`;
+    }
     html += `</div>`;
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div class="alrt e"><span>❌</span><span>Ошибка загрузки</span></div>`;
   }
-
-  html += `<div class="card"><div class="ctitle">Штрафы по сотрудникам</div>`;
-  html += EMPS.map(e=>{
-    const total = FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
-    return `<div class="li" onclick="showEmpFines('${e.id}')">
-      <div class="lic r">⚠️</div>
-      <div class="lii"><div class="lit">${e.name}</div><div class="lis">${e.status==='remote'?'Удалённо':'Офис'}</div></div>
-      <div class="lir"><div class="lirv red">${total}$</div></div>
-      <div class="larr">›</div>
-    </div>`;
-  }).join('');
-  html += `</div>`;
-
-  el.innerHTML = html;
 }
 
 function approveFine(id){
@@ -1813,39 +1820,6 @@ function loadAtt(filter){
 // ADMIN ADVANCES
 // ══════════════════════════════════════
 function loadAAdv(filter){
-  document.querySelectorAll('#sc-aadv .tab').forEach((t,i)=>{
-    t.classList.toggle('on',['pending','approved','declined'][i]===filter);
-  });
-  const list = ADVANCES.filter(a=>a.st===filter);
-  const el = document.getElementById('aadv-list');
-
-  if(!list.length){
-    el.innerHTML=`<div class="empty"><div class="ei">💵</div><div class="et">Нет записей</div></div>`;
-    return;
-  }
-
-  el.innerHTML = list.map(a=>`
-    <div class="advc">
-      <div class="advh">
-        <div>
-          <div style="font-size:14px;font-weight:700;">${a.empName}</div>
-          <div class="advi">${a.date} • ${a.meth}</div>
-        </div>
-        <div class="adva">${a.amt}$</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-        <span class="bdg ${a.st==='approved'?'g':a.st==='pending'?'y':'r'}">${a.st==='approved'?'Одобрен':a.st==='pending'?'Ожидает':'Отказано'}</span>
-        ${filter==='pending'?`
-          <div style="display:flex;gap:6px;">
-            <button class="btn bs bsm mb0" onclick="approveAdv(${a.id})">✅</button>
-            <button class="btn bd bsm mb0" onclick="declineAdv(${a.id})">❌</button>
-            <button class="btn bg bsm mb0" onclick="showReply('${a.empId}')">💬</button>
-          </div>
-        `:''}
-      </div>
-    </div>
-  `).join('');
-}
 
 function approveAdv(id){
   const a=ADVANCES.find(x=>x.id===id);
@@ -1969,30 +1943,32 @@ function updateBD(tid){
 // ══════════════════════════════════════
 // REPORTS
 // ══════════════════════════════════════
-function loadRep(){
-  const present=EMPS.filter(e=>e.ci).length;
-  const absent=EMPS.length-present;
-  const fTotal=FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0);
-  const aTotal=ADVANCES.filter(a=>a.st==='approved').reduce((s,a)=>s+a.amt,0);
-  se('rep-pres',present);
-  se('rep-abs',absent);
-  se('rep-fines',fTotal+'$');
-  se('rep-advs',aTotal+'$');
-
-  document.getElementById('rep-flist').innerHTML = EMPS.map(e=>`
-    <div class="li">
-      <div class="lii"><div class="lit">${e.name}</div><div class="lis">${e.status}</div></div>
-      <div class="lir"><div class="lirv red">${FINES.filter(f=>f.st!=='cancelled').reduce((s,f)=>s+f.amt,0)}$</div></div>
-    </div>
-  `).join('');
-
-  document.getElementById('rep-alist').innerHTML = EMPS.map(e=>{
-    const total=ADVANCES.filter(a=>a.empId===e.id&&a.st==='approved').reduce((s,a)=>s+a.amt,0);
-    return `<div class="li">
-      <div class="lii"><div class="lit">${e.name}</div></div>
-      <div class="lir"><div class="lirv blue">${total}$</div></div>
-    </div>`;
-  }).join('');
+async function loadRep(){
+  try {
+    const res = await fetch(API_URL + '?action=getReports', {mode:'cors'});
+    const data = await res.json();
+    if(!data.ok) throw new Error();
+    se('rep-pres', data.present);
+    se('rep-abs', data.absent);
+    se('rep-fines', data.finesTotal+'$');
+    se('rep-advs', data.advancesTotal+'$');
+    document.getElementById('rep-flist').innerHTML = data.empFinesList.length ?
+      data.empFinesList.map(e=>`
+        <div class="li">
+          <div class="lii"><div class="lit">${e.name}</div></div>
+          <div class="lir"><div class="lirv red">${e.amt}$</div></div>
+        </div>
+      `).join('') : `<div class="empty"><div class="ei">✅</div><div class="et">Штрафов нет</div></div>`;
+    document.getElementById('rep-alist').innerHTML = data.empAdvList.length ?
+      data.empAdvList.map(e=>`
+        <div class="li">
+          <div class="lii"><div class="lit">${e.name}</div></div>
+          <div class="lir"><div class="lirv blue">${e.amt}$</div></div>
+        </div>
+      `).join('') : `<div class="empty"><div class="ei">💵</div><div class="et">Авансов нет</div></div>`;
+  } catch(e) {
+    showToast('❌ Ошибка загрузки отчётов','e');
+  }
 }
 
 // ══════════════════════════════════════
