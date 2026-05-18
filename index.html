@@ -1618,12 +1618,11 @@ function showEmpDetail(id){
   const fTotal=empFines.reduce((s,f)=>s+f.amt,0);
   showModal(emp.name, `
     <div class="cr"><div class="ck">Telegram ID</div><div class="cv">${emp.id}</div></div>
-    <div class="cr"><div class="ck">Статус</div><div class="cv"><span class="bdg ${emp.status==='active'?'g':'b'}">${emp.status}</span></div></div>
+    <div class="cr"><div class="ck">Статус</div><div class="cv"><span class="bdg ${emp.status==='active'?'g':emp.status==='remote'?'b':'r'}">${emp.status}</span></div></div>
     <div class="cr"><div class="ck">Зарплата</div><div class="cv green fw7">${emp.salary||0}$</div></div>
     <div class="cr"><div class="ck">Остаток</div><div class="cv">${emp.balance||0}$</div></div>
     <div class="cr"><div class="ck">Штрафы (месяц)</div><div class="cv red fw7">${fTotal}$</div></div>
     <div class="cr"><div class="ck">Check-in</div><div class="cv">${emp.ci?'✅ '+emp.ciTime:'❌ Не пришёл'}</div></div>
-    <div class="cr"><div class="ck">Check-out</div><div class="cv">${emp.co?'✅ Выполнен':'—'}</div></div>
     <div class="dvd"></div>
     <div class="brow">
       <button class="btn bg bsm f1 mb0" onclick="showEditSal('${emp.id}')">✏️ Зарплата</button>
@@ -1633,9 +1632,78 @@ function showEmpDetail(id){
       <button class="btn bg bsm f1 mb0" onclick="showEmpFines('${emp.id}')">⚠️ Штрафы</button>
       <button class="btn bg bsm f1 mb0" onclick="showEmpAdvances('${emp.id}')">💵 Авансы</button>
     </div>
+    <div class="dvd"></div>
+    <div class="ctitle">Изменить статус</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+      <button class="btn bs bsm mb0" onclick="changeEmpStatus('${emp.id}','active')">✅ Активный</button>
+      <button class="btn bg bsm mb0" onclick="changeEmpStatus('${emp.id}','remote')">🏠 Удалённый</button>
+      <button class="btn bw bsm mb0" onclick="changeEmpStatus('${emp.id}','vacation')">🏖 Отпуск</button>
+      <button class="btn bg bsm mb0" onclick="changeEmpStatus('${emp.id}','sick')">🤒 Больничный</button>
+    </div>
+    <button class="btn bd mb0" onclick="confirmDeleteEmp('${emp.id}','${emp.name}')">🗑 Удалить сотрудника</button>
   `);
 }
 
+async function changeEmpStatus(id, newStatus){
+  showToast('⏳ Обновляем...','i');
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      mode:'cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'updateEmployeeStatus', telegramId:id, status:newStatus})
+    });
+    const data = await res.json();
+    if(data.ok){
+      const emp = EMPS.find(e=>e.id===id);
+      if(emp) emp.status = newStatus;
+      showToast('✅ Статус обновлён','s');
+      cmod();
+      loadEmps('all');
+    } else {
+      showToast('❌ Ошибка обновления','e');
+    }
+  } catch(e) {
+    showToast('❌ Ошибка соединения','e');
+  }
+}
+
+function confirmDeleteEmp(id, name){
+  cmod();
+  setTimeout(()=>showModal('Удалить сотрудника', `
+    <div class="alrt e"><span>⚠️</span><span>Вы уверены что хотите удалить <b>${name}</b>? Это действие нельзя отменить!</span></div>
+    <div class="brow">
+      <button class="btn bd f1 mb0" onclick="deleteEmp('${id}')">🗑 Да, удалить</button>
+      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
+    </div>
+  `), 50);
+}
+
+async function deleteEmp(id){
+  showToast('⏳ Удаляем...','i');
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      mode:'cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'deleteEmployee', telegramId:id})
+    });
+    const data = await res.json();
+    if(data.ok){
+      const idx = EMPS.findIndex(e=>e.id===id);
+      if(idx>=0) EMPS.splice(idx,1);
+      showToast('✅ Сотрудник удалён','s');
+      cmod();
+      loadEmps('all');
+      loadAdminHome();
+    } else {
+      showToast('❌ Ошибка удаления','e');
+    }
+  } catch(e) {
+    showToast('❌ Ошибка соединения','e');
+  }
+}
+  
 function showEmpFines(id){
   const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник'};
   cmod();
