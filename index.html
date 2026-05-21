@@ -659,6 +659,7 @@ const S = {
   photo: null,
   meth: null,
   cam: null,
+  locOutside: false,
   noFineDays: [0,6],
   sets: {fu:'10:15',f1u:'11:00',f1:5,f2:10,af:10},
 };
@@ -946,7 +947,12 @@ function getLocation() {
     enableNext('btn-next1');
     btn.textContent='✅ Местоположение определено'; btn.disabled=false;
     showToast('✅ Геолокация получена','s');
-  },()=>{showToast('❌ Ошибка геолокации','e');btn.textContent='📍 Определить местоположение';btn.disabled=false;},{enableHighAccuracy:true,timeout:10000});
+    }
+  },
+  ()=>{showToast('❌ Ошибка геолокации','e');btn.textContent='📍 Определить местоположение';btn.disabled=false;},
+  {enableHighAccuracy:true,timeout:10000}
+);
+}
 }
  
 function contactAdmin(){
