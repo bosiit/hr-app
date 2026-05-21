@@ -948,7 +948,6 @@ function getLocation() {
     btn.textContent='✅ Местоположение определено'; btn.disabled=false;
     showToast('✅ Геолокация получена','s');
     }
-  },
   ()=>{showToast('❌ Ошибка геолокации','e');btn.textContent='📍 Определить местоположение';btn.disabled=false;},
   {enableHighAccuracy:true,timeout:10000}
 );
