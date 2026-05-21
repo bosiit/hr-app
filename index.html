@@ -1078,10 +1078,20 @@ const ciData = {
   outsideOffice: S.locOutside||false,
   distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
 };
-fetch(API, {method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(ciData)});
-if(window.Telegram?.WebApp?.sendData){
-  Telegram.WebApp.sendData(JSON.stringify(ciData));
-}
+const params = new URLSearchParams({
+  action: 'saveCheckin',
+  telegramId: S.user.id,
+  name: S.user.name,
+  type: isOut ? 'checkout' : 'checkin',
+  location: S.loc==='remote'?'remote':(S.loc?S.loc.url:''),
+  comment: comment,
+  outsideOffice: S.locOutside||false,
+  distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
+});
+fetch(API + '?' + params.toString(), {mode:'cors'});
+  
+// Не используем sendData — он закрывает приложение
+// Данные уже отправлены через fetch выше
  
   setTimeout(()=>{
     if(isOut){S.hasCO=true;showToast('✅ Check-out сохранён!','s');}
