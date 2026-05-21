@@ -930,15 +930,16 @@ function getLocation() {
     const {latitude:lat,longitude:lng}=pos.coords;
     const dist=calcDist(lat,lng,OFFICE.lat,OFFICE.lng);
     if(dist>OFFICE.r){
-      document.getElementById('loc-result').innerHTML=`
-        <div class="alrt e"><span>❌</span><span>Вы далеко от офиса (${Math.round(dist)}м)</span></div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn bg bsm f1" onclick="getLocation()" style="flex:1;">🔄 Повторить</button>
-          <button class="btn bp bsm f1" onclick="contactAdmin()" style="flex:1;">📞 Связаться</button>
-        </div>`;
-      btn.textContent='📍 Определить местоположение'; btn.disabled=false;
-      showToast('❌ Вы далеко от офиса','e'); return;
-    }
+  S.loc={lat,lng,url:`https://maps.google.com/?q=${lat},${lng}`};
+  S.locOutside=true;
+  document.getElementById('map-box').innerHTML=`<div class="mi">⚠️</div><div class="mt2" style="color:var(--yellow);">⚠️ Вы в ${Math.round(dist)}м от офиса</div>`;
+  document.getElementById('loc-result').innerHTML=`<div class="alrt w"><span>⚠️</span><span>Вы в ${Math.round(dist)}м от офиса. Чекин разрешён — администратор получит уведомление и решит начислять штраф или нет.</span></div>`;
+  enableNext('btn-next1');
+  btn.textContent='⚠️ Вне офиса — продолжить';
+  btn.disabled=false;
+  showToast('⚠️ Вы вне офиса — админ будет уведомлён','i');
+} else {
+  S.locOutside=false;
     S.loc={lat,lng,url:`https://maps.google.com/?q=${lat},${lng}`};
     document.getElementById('map-box').innerHTML=`<div class="mi">📍</div><div class="mt2" style="color:var(--green);">✅ ${lat.toFixed(4)}, ${lng.toFixed(4)}<br>${Math.round(dist)}м от офиса</div>`;
     document.getElementById('loc-result').innerHTML=`<div class="alrt s"><span>✅</span><span>Геолокация подтверждена • ${Math.round(dist)}м</span></div>`;
