@@ -1088,7 +1088,7 @@ const params = new URLSearchParams({
   outsideOffice: S.locOutside||false,
   distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
 });
-fetch(API + '?' + params.toString(), {mode:'cors'});
+fetch(API + '?' + params.toString(), {mode:'no-cors'});
   
 // Не используем sendData — он закрывает приложение
 // Данные уже отправлены через fetch выше
