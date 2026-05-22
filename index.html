@@ -1068,30 +1068,17 @@ async function submitCI(){
   const comment=document.getElementById('inp-comment').value.trim();
  
 const ciData = {
-  checkin_from_app: true,
-  action: isOut?'checkout':'checkin',
+  action: 'saveCheckin',
   telegramId: S.user.id,
   name: S.user.name,
+  type: isOut?'checkout':'checkin',
   location: S.loc==='remote'?'remote':(S.loc?S.loc.url:''),
   comment,
   timestamp: new Date().toISOString(),
   outsideOffice: S.locOutside||false,
   distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
 };
-const params = new URLSearchParams({
-  action: 'saveCheckin',
-  telegramId: S.user.id,
-  name: S.user.name,
-  type: isOut ? 'checkout' : 'checkin',
-  location: S.loc==='remote'?'remote':(S.loc?S.loc.url:''),
-  comment: comment,
-  outsideOffice: S.locOutside||false,
-  distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
-});
-fetch(API + '?' + params.toString(), {mode:'no-cors'});
-  
-// Не используем sendData — он закрывает приложение
-// Данные уже отправлены через fetch выше
+await apiPost(ciData);
  
   setTimeout(()=>{
     if(isOut){S.hasCO=true;showToast('✅ Check-out сохранён!','s');}
@@ -1147,19 +1134,17 @@ async function submitAdv(){
   if(amt>bal){showToast(`❌ Недостаточно остатка. Доступно: ${bal}$`,'e');return;}
   showToast('⏳ Отправляем заявку...','i');
  
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({
-      action:'advance',
-      telegramId:S.user.id,
-      name:S.user.name,
-      amount:amt,
-      method:S.meth==='card'?'💳 Картой':'💵 Наличными',
-      comment:document.getElementById('inp-adv-comment').value.trim()
-    }));
-  }
+  const d = await apiPost({
+    action:'advance',
+    telegramId:S.user.id,
+    name:S.user.name,
+    amount:amt,
+    method:S.meth==='card'?'💳 Картой':'💵 Наличными',
+    comment:document.getElementById('inp-adv-comment').value.trim()
+  });
  
   setTimeout(()=>{
-    showToast('✅ Заявка на аванс отправлена!','s');
+    showToast(d.ok?'✅ Заявка на аванс отправлена!':'❌ Ошибка отправки',d.ok?'s':'e');
     document.getElementById('inp-adv-amount').value='';
     S.meth=null;
     document.getElementById('meth-card').className='btn bg mb0';
@@ -1196,12 +1181,10 @@ async function submitAnon(){
   if(text.length>500){showToast('❌ Максимум 500 символов','e');return;}
   showToast('⏳ Отправляем...','i');
  
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({action:'anonymous',telegramId:S.user.id,text}));
-  }
+  const d = await apiPost({action:'anonymous',telegramId:S.user.id,text});
  
   setTimeout(()=>{
-    showToast('✅ Сообщение отправлено анонимно!','s');
+    showToast(d.ok?'✅ Сообщение отправлено анонимно!':'❌ Ошибка отправки',d.ok?'s':'e');
     document.getElementById('inp-anon').value=''; updAnonCnt(); eTab('more');
   },1000);
 }
@@ -1398,246 +1381,170 @@ function loadAtt(filter){
   if(filter==='late') list=list.filter(e=>e.late);
   document.getElementById('att-list').innerHTML=list.length?list.map(e=>`
     <div class="er" onclick="showEmpDetail('${e.id}')">
-      <div class="era" style="font-size:20px;">${e.ci?'✅':'🚫'}</div>
-      <div class="eri"><div class="ern">${e.name}</div><div class="ers">${e.ci?`IN: ${e.ciTime}${e.co?' • OUT ✅':''}${e.late?' • ⚠️':''}`:'Не пришёл'}</div></div>
-      <span class="bdg ${e.ci?'g':'r'}">${e.ci?'IN':'—'}</span>
-    </div>`).join(''):`<div class="empty"><div class="ei">✅</div><div class="et">Нет записей</div></div>`;
+      <div class="era">${e.name.charAt(0)}</div>
+      <div class="eri"><div class="ern">${e.name}</div><div class="ers">${e.ciTime?'IN: '+e.ciTime:'Нет Check-in'}${e.co?' • OUT':''}</div></div>
+      <div style="display:flex;gap:4px;">
+        <span class="bdg ${e.ci?'g':'r'}">${e.ci?'Пришёл':'Нет'}</span>
+        ${e.late?`<span class="bdg y">Опоздал</span>`:''}
+      </div>
+    </div>`).join(''):`<div class="empty"><div class="ei">📋</div><div class="et">Список пуст</div></div>`;
 }
  
 // ═══ ADMIN ADVANCES ═══
 async function loadAAdv(filter){
-  document.querySelectorAll('#sc-aadv .tab').forEach((t,i)=>t.classList.toggle('on',['pending','approved','declined'][i]===filter));
   const el=document.getElementById('aadv-list');
   el.innerHTML=`<div class="loader"><div class="spin"></div></div>`;
   const d=await apiGet('getAdminAdvances');
   if(!d.ok){el.innerHTML=`<div class="alrt e"><span>❌</span><span>Ошибка загрузки</span></div>`;return;}
-  if(!d.advances.length){el.innerHTML=`<div class="empty"><div class="ei">💵</div><div class="et">Нет записей</div></div>`;return;}
-  el.innerHTML=d.advances.map(a=>`
+  let list=d.advances;
+  if(filter) list=list.filter(a=>(a.st||'approved')===filter);
+  el.innerHTML=list.length?list.map(a=>`
     <div class="advc">
-      <div class="advh"><div><div style="font-size:14px;font-weight:700;">${a.empName}</div><div class="advi">${a.date} • ${a.time||''}</div></div><div class="adva">${a.amt}$</div></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-        <span class="bdg g">Одобрен</span>
-        <div style="font-size:12px;color:var(--text2);">Остаток: ${a.ba}$</div>
-      </div>
-    </div>`).join('');
+      <div class="advh"><div class="advi">${a.date} • ${a.time}</div><div class="adva">${a.amt}$</div></div>
+      <div class="fw7">${a.empName}</div>
+      <div class="advi">Остаток после: ${a.ba}$</div>
+      <div style="margin-top:8px;"><span class="bdg ${a.st==='approved'?'g':a.st==='declined'?'r':'y'}">${a.st}</span></div>
+    </div>`).join(''):`<div class="empty"><div class="ei">💵</div><div class="et">Нет заявок</div></div>`;
 }
  
 // ═══ ADMIN SALARY ═══
 function loadASal(){
-  document.getElementById('asal-list').innerHTML=`
-    <div class="card"><div class="ctitle">Зарплаты сотрудников</div>
-    ${EMPS.map(e=>`
-      <div class="li">
-        <div class="lic g">💳</div>
-        <div class="lii"><div class="lit">${e.name}</div><div class="lis">Остаток: ${e.balance}$</div></div>
-        <div class="lir">
-          <div class="lirv green">${e.salary}$</div>
-          <button class="btn bg bsm mb0" style="margin-top:4px;padding:6px 12px;" onclick="showEditSal('${e.id}')">✏️</button>
-        </div>
-      </div>`).join('')}
-    </div>`;
+  document.getElementById('asal-list').innerHTML=`<div class="card">${EMPS.map(e=>`
+    <div class="li" onclick="showEditSal('${e.id}')">
+      <div class="lic g">💳</div><div class="lii"><div class="lit">${e.name}</div><div class="lis">ID: ${e.id}</div></div>
+      <div class="lir"><div class="lirv green">${e.salary||0}$</div><div class="lis">Остаток: ${e.balance||0}$</div></div>
+    </div>`).join('')}</div>`;
 }
  
 function showEditSal(id){
-  const emp=EMPS.find(e=>e.id===id)||{name:'Сотрудник',salary:0};
-  showModal('Зарплата: '+emp.name,`
-    <div class="ig"><label class="il">Текущая зарплата</label><input class="inp" value="${emp.salary}$" disabled></div>
-    <div class="ig"><label class="il">Новая зарплата ($)</label><input class="inp" id="new-sal-inp" type="number" placeholder="500"></div>
-    <div class="brow">
-      <button class="btn bs f1 mb0" onclick="saveSal('${id}')">✅ Сохранить</button>
-      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
-    </div>`);
+  const emp=EMPS.find(e=>e.id===id);
+  if(!emp) return;
+  showModal('Изменить зарплату',`
+    <div class="ig"><label class="il">Сотрудник</label><input class="inp" value="${emp.name}" disabled></div>
+    <div class="ig"><label class="il">Зарплата ($)</label><input class="inp" id="edit-sal" type="number" value="${emp.salary||0}"></div>
+    <button class="btn bs mb0" onclick="saveSal('${id}')">✅ Сохранить</button>`);
 }
  
 async function saveSal(id){
-  const val=Number(document.getElementById('new-sal-inp')?.value);
-  if(!val||val<=0){showToast('❌ Введите корректную сумму','e');return;}
-  const d=await apiPost({action:'saveSalary',telegramId:id,salary:val});
-  const emp=EMPS.find(e=>e.id===id);
-  if(emp){emp.salary=val;emp.balance=val;}
-  showToast(d.ok?'✅ Зарплата обновлена':'✅ Обновлено локально','s');
-  cmod(); loadASal();
+  const salary=Number(document.getElementById('edit-sal').value||0);
+  const d=await apiPost({action:'saveSalary',telegramId:id,salary});
+  if(d.ok){const emp=EMPS.find(e=>e.id===id); if(emp){emp.salary=salary;emp.balance=salary;} showToast('✅ Сохранено','s'); cmod(); loadASal();}
+  else showToast('❌ Ошибка','e');
 }
  
 // ═══ BIRTHDAYS ═══
 function loadBDs(){
-  const today=new Date();
-  const todayStr=`${String(today.getDate()).padStart(2,'0')}.${String(today.getMonth()+1).padStart(2,'0')}`;
-  document.getElementById('bd-list').innerHTML=BIRTHDAYS.length?`
-    <div class="card"><div class="ctitle">🎂 Дни рождения</div>
-    ${BIRTHDAYS.map(b=>`
-      <div class="li">
-        <div class="lic y">${b.date===todayStr?'🎉':'🎂'}</div>
-        <div class="lii"><div class="lit">${b.name}</div><div class="lis">${b.date}${b.date===todayStr?' • Сегодня! 🎉':''}</div></div>
-        <button class="btn bg bsm mb0" onclick="editBD('${b.tid}')">✏️</button>
-      </div>`).join('')}
-    </div>`:`<div class="empty"><div class="ei">🎂</div><div class="et">Дней рождений нет</div></div>`;
+  const el=document.getElementById('bd-list');
+  if(!BIRTHDAYS.length){el.innerHTML=`<div class="empty"><div class="ei">🎂</div><div class="et">Список пуст</div></div>`;return;}
+  el.innerHTML=`<div class="card">${BIRTHDAYS.map(b=>`
+    <div class="li"><div class="lic y">🎂</div><div class="lii"><div class="lit">${b.name}</div><div class="lis">ID: ${b.tid}</div></div><div class="lir"><div class="lirv">${b.date}</div></div></div>`).join('')}</div>`;
 }
  
 function showAddBD(){
-  showModal('Добавить день рождения',`
-    <div class="ig"><label class="il">Telegram ID</label><input class="inp" id="bd-tid" type="number" placeholder="123456789"></div>
-    <div class="ig"><label class="il">Дата (ДД.ММ)</label><input class="inp" id="bd-date" placeholder="25.05"></div>
-    <div class="brow">
-      <button class="btn bs f1 mb0" onclick="saveBD()">✅ Добавить</button>
-      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
-    </div>`);
+  showModal('Добавить ДР',`
+    <div class="ig"><label class="il">Telegram ID</label><input class="inp" id="bd-tid" placeholder="123456789"></div>
+    <div class="ig"><label class="il">Дата ДР</label><input class="inp" id="bd-date" placeholder="25.05"></div>
+    <button class="btn bs mb0" onclick="saveBD()">✅ Сохранить</button>`);
 }
  
 async function saveBD(){
-  const tid=document.getElementById('bd-tid')?.value;
-  const date=document.getElementById('bd-date')?.value;
-  if(!tid||!date){showToast('❌ Заполните все поля','e');return;}
-  const emp=EMPS.find(e=>e.id===tid);
-  await apiPost({action:'saveBirthday',telegramId:tid,date});
-  BIRTHDAYS.push({name:emp?.name||'Сотрудник',date,tid});
-  showToast('✅ ДР добавлен','s'); cmod(); loadBDs();
-}
- 
-function editBD(tid){
-  const b=BIRTHDAYS.find(x=>x.tid===tid);
-  showModal('Изменить ДР: '+(b?.name||''),`
-    <div class="ig"><label class="il">Новая дата (ДД.ММ)</label><input class="inp" id="bd-new" value="${b?.date||''}" placeholder="25.05"></div>
-    <div class="brow">
-      <button class="btn bs f1 mb0" onclick="updateBD('${tid}')">✅ Сохранить</button>
-      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
-    </div>`);
-}
- 
-async function updateBD(tid){
-  const val=document.getElementById('bd-new')?.value;
-  if(!val){showToast('❌ Введите дату','e');return;}
-  await apiPost({action:'updateBirthday',telegramId:tid,date:val});
-  const b=BIRTHDAYS.find(x=>x.tid===tid);
-  if(b) b.date=val;
-  showToast('✅ ДР обновлён','s'); cmod(); loadBDs();
+  const tid=document.getElementById('bd-tid').value.trim();
+  const date=document.getElementById('bd-date').value.trim();
+  if(!tid||!date){showToast('❌ Заполните поля','e');return;}
+  const d=await apiPost({action:'saveBirthday',telegramId:tid,date});
+  if(d.ok){await loadBirthdaysFromAPI(); showToast('✅ ДР сохранён','s'); cmod(); loadBDs();}
+  else showToast('❌ Ошибка','e');
 }
  
 // ═══ REPORTS ═══
 async function loadRep(){
   const d=await apiGet('getReports');
-  if(!d.ok){showToast('❌ Ошибка загрузки','e');return;}
-  se('rep-pres',d.present); se('rep-abs',d.absent);
-  se('rep-fines',d.finesTotal+'$'); se('rep-advs',d.advancesTotal+'$');
-  document.getElementById('rep-flist').innerHTML=d.empFinesList?.length?
-    d.empFinesList.map(e=>`<div class="li"><div class="lii"><div class="lit">${e.name}</div></div><div class="lir"><div class="lirv red">${e.amt}$</div></div></div>`).join(''):
-    `<div class="empty"><div class="ei">✅</div><div class="et">Штрафов нет</div></div>`;
-  document.getElementById('rep-alist').innerHTML=d.empAdvList?.length?
-    d.empAdvList.map(e=>`<div class="li"><div class="lii"><div class="lit">${e.name}</div></div><div class="lir"><div class="lirv blue">${e.amt}$</div></div></div>`).join(''):
-    `<div class="empty"><div class="ei">💵</div><div class="et">Авансов нет</div></div>`;
+  if(!d.ok) return;
+  const r=d.report;
+  se('rep-pres',r.present||0);
+  se('rep-abs',r.absent||0);
+  se('rep-fines',(r.fineTotal||0)+'$');
+  se('rep-advs',(r.advanceTotal||0)+'$');
+  document.getElementById('rep-flist').innerHTML=`<div class="cr"><div class="ck">Всего штрафов</div><div class="cv red fw7">${r.fineTotal||0}$</div></div>`;
+  document.getElementById('rep-alist').innerHTML=`<div class="cr"><div class="ck">Всего авансов</div><div class="cv green fw7">${r.advanceTotal||0}$</div></div>`;
 }
  
 // ═══ SETTINGS ═══
+let selDays=[0,6];
 function togDay(d){
-  const btn=document.getElementById('d'+d);
-  const idx=S.noFineDays.indexOf(d);
-  if(idx>=0){S.noFineDays.splice(idx,1);btn.className='btn bg bsm';}
-  else{S.noFineDays.push(d);btn.className='btn bp bsm';}
+  if(selDays.includes(d)) selDays=selDays.filter(x=>x!==d); else selDays.push(d);
+  for(let i=0;i<7;i++){const b=document.getElementById('d'+i); if(b)b.className=`btn ${selDays.includes(i)?'bp':'bg'} bsm`;}
 }
  
-function saveSettings(){
-  S.sets.fu=document.getElementById('set-fu')?.value||'10:15';
-  S.sets.f1u=document.getElementById('set-f1u')?.value||'11:00';
-  S.sets.f1=Number(document.getElementById('set-f1a')?.value||5);
-  S.sets.f2=Number(document.getElementById('set-f2a')?.value||10);
-  S.sets.af=Number(document.getElementById('set-afa')?.value||10);
-  se('v-fu',S.sets.fu); se('v-f1',S.sets.f1+'$'); se('v-f2',S.sets.f2+'$'); se('v-nci',S.sets.af+'$');
-  se('v-f1t',`${S.sets.fu} — ${S.sets.f1u}`); se('v-f2t',`После ${S.sets.f1u}`);
-  showToast('✅ Настройки сохранены','s');
+async function saveSettings(){
+  const body={
+    action:'saveSettings',
+    office:{
+      radius:Number(document.getElementById('set-radius').value||100),
+      lat:Number(document.getElementById('set-lat').value||OFFICE.lat),
+      lng:Number(document.getElementById('set-lng').value||OFFICE.lng)
+    },
+    penalty:{
+      freeUntil:document.getElementById('set-fu').value,
+      fineOneUntil:document.getElementById('set-f1u').value,
+      fineOne:Number(document.getElementById('set-f1a').value||5),
+      fineTwo:Number(document.getElementById('set-f2a').value||10),
+      noCheckInFine:Number(document.getElementById('set-afa').value||10)
+    },
+    noFineDays:selDays
+  };
+  const d=await apiPost(body);
+  showToast(d.ok?'✅ Настройки сохранены':'❌ Ошибка',d.ok?'s':'e');
 }
  
-// ═══ ADD EMPLOYEE ═══
-function showAddEmp(){
-  showModal('Добавить сотрудника',`
-    <div class="ig"><label class="il">Telegram ID</label><input class="inp" id="new-tid" type="number" placeholder="123456789"></div>
-    <div class="ig"><label class="il">Имя Фамилия</label><input class="inp" id="new-name" placeholder="Имя Фамилия"></div>
-    <div class="ig"><label class="il">Статус</label>
-      <select class="inp" id="new-status">
-        <option value="active">Активный (офис)</option>
-        <option value="remote">Удалённый</option>
-      </select>
-    </div>
-    <div class="ig mb0"><label class="il">Зарплата ($)</label><input class="inp" id="new-salary" type="number" placeholder="500"></div>
-    <div class="brow" style="margin-top:14px;">
-      <button class="btn bs f1 mb0" onclick="addEmp()">✅ Добавить</button>
-      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
-    </div>`);
-}
- 
-async function addEmp(){
-  const tid=document.getElementById('new-tid')?.value;
-  const name=document.getElementById('new-name')?.value;
-  const status=document.getElementById('new-status')?.value;
-  const salary=Number(document.getElementById('new-salary')?.value||0);
-  if(!tid||!name){showToast('❌ Заполните обязательные поля','e');return;}
-  await apiPost({action:'addEmployee',telegramId:tid,name,status,salary});
-  EMPS.push({id:tid,name,status,salary,balance:salary,ci:false,co:false,late:false,ciTime:null});
-  showToast('✅ Сотрудник добавлен','s'); cmod(); loadEmps('all');
-}
- 
-// ═══ REPLY ═══
-function showReply(tid){
-  const emp=EMPS.find(e=>e.id===tid);
-  cmod();
-  setTimeout(()=>showModal('Ответить: '+(emp?.name||tid),`
-    <div class="ig"><label class="il">Telegram ID: ${tid}</label><textarea class="inp" id="reply-txt" rows="4" placeholder="Напишите сообщение..."></textarea></div>
-    <div class="brow">
-      <button class="btn bp f1 mb0" onclick="sendReply('${tid}')">💬 Отправить</button>
-      <button class="btn bg f1 mb0" onclick="cmod()">Отмена</button>
-    </div>`),50);
-}
- 
-function sendReply(tid){
-  const txt=document.getElementById('reply-txt')?.value.trim();
-  if(!txt){showToast('❌ Напишите сообщение','e');return;}
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({action:'replyEmployee',telegramId:tid,text:txt}));
-  }
-  showToast('✅ Сообщение отправлено','s'); cmod();
-}
- 
-// ═══ NOTIFICATIONS ═══
-async function showNotifs(){
-  showModal('Уведомления',`<div class="loader"><div class="spin"></div></div>`);
-  const d=await apiGet('getNotifications');
-  if(d.ok&&d.notifications.length){
-    document.getElementById('mod-body').innerHTML=d.notifications.map(n=>`
-      <div class="fc ${n.isNew?'pend':''}" style="margin-bottom:10px;">
-        <div class="fch"><div class="fcd">${n.date}${n.time?' • '+n.time:''}</div><span class="bdg ${n.isNew?'y':'gr'}">${n.isNew?'Новое':'Прочитано'}</span></div>
-        <div class="fcr fw7">${n.title}</div>
-        <div class="fcr">${n.text}</div>
-      </div>`).join('');
-    const count=d.notifications.filter(n=>n.isNew).length;
-    ['notif-dot','notif-dot2'].forEach(id=>{
-      const el=document.getElementById(id);
-      if(el){el.textContent=count;el.style.display=count>0?'flex':'none';}
-    });
-  } else {
-    document.getElementById('mod-body').innerHTML=`<div class="empty"><div class="ei">🔔</div><div class="et">Нет уведомлений</div><div class="es">Всё спокойно</div></div>`;
-    ['notif-dot','notif-dot2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
-  }
-}
- 
-// ═══ MODAL ═══
+// ═══ MODAL / TOAST / NOTIFS ═══
 function showModal(title,body){
-  se('mod-title',title);
+  document.getElementById('mod-title').innerHTML=title;
   document.getElementById('mod-body').innerHTML=body;
   document.getElementById('mov').classList.add('on');
 }
- 
-function cmod(e){
-  if(!e||e.target===document.getElementById('mov'))
-    document.getElementById('mov').classList.remove('on');
+function cmod(e){ if(e && e.target.id!=='mov') return; document.getElementById('mov').classList.remove('on'); }
+function showToast(text,type='i'){
+  const t=document.getElementById('toast');
+  t.textContent=text; t.className='toast on '+type;
+  setTimeout(()=>t.classList.remove('on'),2500);
+}
+async function showNotifs(){
+  const d=await apiGet('getNotifications');
+  if(!d.ok){showToast('❌ Ошибка уведомлений','e');return;}
+  showModal('Уведомления',d.notifications.length?d.notifications.map(n=>`
+    <div class="li"><div class="lic ${n.type==='fine'?'y':n.type==='absent'?'r':'b'}">${n.type==='fine'?'⚠️':n.type==='absent'?'🚫':'🔔'}</div><div class="lii"><div class="lit">${n.title}</div><div class="lis">${n.text}</div></div></div>`).join(''):`<div class="empty"><div class="ei">🔔</div><div class="et">Нет уведомлений</div></div>`);
 }
  
-// ═══ TOAST ═══
-function showToast(msg,type){
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.className='toast on '+(type||'');
-  clearTimeout(window._tt);
-  window._tt=setTimeout(()=>el.classList.remove('on'),2800);
+function showReply(id){
+  showModal('Ответ сотруднику',`
+    <div class="ig"><label class="il">Сообщение</label><textarea class="inp" id="reply-text" rows="4"></textarea></div>
+    <button class="btn bp mb0" onclick="sendReply('${id}')">💬 Отправить</button>`);
+}
+async function sendReply(id){
+  const text=document.getElementById('reply-text').value.trim();
+  if(!text){showToast('❌ Напишите сообщение','e');return;}
+  const d=await apiPost({action:'replyEmployee',telegramId:id,text});
+  showToast(d.ok?'✅ Ответ отправлен':'❌ Ошибка',d.ok?'s':'e');
+  if(d.ok)cmod();
+}
+ 
+function showAddEmp(){
+  showModal('Добавить сотрудника',`
+    <div class="ig"><label class="il">Telegram ID</label><input class="inp" id="new-tid"></div>
+    <div class="ig"><label class="il">Имя</label><input class="inp" id="new-name"></div>
+    <div class="ig"><label class="il">Зарплата</label><input class="inp" id="new-sal" type="number"></div>
+    <button class="btn bs mb0" onclick="addEmp()">✅ Добавить</button>`);
+}
+async function addEmp(){
+  const telegramId=document.getElementById('new-tid').value.trim();
+  const name=document.getElementById('new-name').value.trim();
+  const salary=Number(document.getElementById('new-sal').value||0);
+  if(!telegramId||!name){showToast('❌ Заполните ID и имя','e');return;}
+  const d=await apiPost({action:'addEmployee',telegramId,name,salary,status:'active'});
+  if(d.ok){await loadEmpsFromAPI(); showToast('✅ Добавлен','s'); cmod(); loadEmps('all');}
+  else showToast('❌ Ошибка','e');
 }
 </script>
 </body>
 </html>
- 
