@@ -1133,21 +1133,33 @@ function updAdvBal(){
 async function submitAdv(){
   const amt=Number(document.getElementById('inp-adv-amount').value);
   const bal=S.user?.balance||0;
+
   if(!amt||amt<=0){showToast('❌ Введите сумму','e');return;}
   if(!S.meth){showToast('❌ Выберите способ получения','e');return;}
   if(amt>bal){showToast(`❌ Недостаточно остатка. Доступно: ${bal}$`,'e');return;}
+
   showToast('⏳ Отправляем заявку...','i');
- 
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({
-      action:'advance',
-      telegramId:S.user.id,
-      name:S.user.name,
-      amount:amt,
-      method:S.meth==='card'?'💳 Картой':'💵 Наличными',
-      comment:document.getElementById('inp-adv-comment').value.trim()
-    }));
+
+  const d = await apiPost({
+    action:'advance',
+    telegramId:S.user.id,
+    name:S.user.name,
+    amount:amt,
+    method:S.meth==='card'?'💳 Картой':'💵 Наличными',
+    comment:document.getElementById('inp-adv-comment').value.trim()
+  });
+
+  if(d.ok){
+    showToast('✅ Заявка на аванс отправлена!','s');
+    document.getElementById('inp-adv-amount').value='';
+    S.meth=null;
+    document.getElementById('meth-card').className='btn bg mb0';
+    document.getElementById('meth-cash').className='btn bg mb0';
+    eTab('more');
+  } else {
+    showToast('❌ Ошибка отправки','e');
   }
+}
  
   setTimeout(()=>{
     showToast('✅ Заявка на аванс отправлена!','s');
@@ -1183,13 +1195,27 @@ function updAnonCnt(){
  
 async function submitAnon(){
   const text=document.getElementById('inp-anon').value.trim();
+
   if(!text){showToast('❌ Напишите сообщение','e');return;}
   if(text.length>500){showToast('❌ Максимум 500 символов','e');return;}
+
   showToast('⏳ Отправляем...','i');
- 
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({action:'anonymous',telegramId:S.user.id,text}));
+
+  const d = await apiPost({
+    action:'anonymous',
+    telegramId:S.user.id,
+    text:text
+  });
+
+  if(d.ok){
+    showToast('✅ Сообщение отправлено анонимно!','s');
+    document.getElementById('inp-anon').value='';
+    updAnonCnt();
+    eTab('more');
+  } else {
+    showToast('❌ Ошибка отправки','e');
   }
+}
  
   setTimeout(()=>{
     showToast('✅ Сообщение отправлено анонимно!','s');
@@ -1578,13 +1604,28 @@ function showReply(tid){
     </div>`),50);
 }
  
-function sendReply(tid){
+async function sendReply(tid){
   const txt=document.getElementById('reply-txt')?.value.trim();
-  if(!txt){showToast('❌ Напишите сообщение','e');return;}
-  if(window.Telegram?.WebApp?.sendData){
-    Telegram.WebApp.sendData(JSON.stringify({action:'replyEmployee',telegramId:tid,text:txt}));
+
+  if(!txt){
+    showToast('❌ Напишите сообщение','e');
+    return;
   }
-  showToast('✅ Сообщение отправлено','s'); cmod();
+
+  showToast('⏳ Отправляем...','i');
+
+  const d = await apiPost({
+    action:'replyEmployee',
+    telegramId:tid,
+    text:txt
+  });
+
+  if(d.ok){
+    showToast('✅ Сообщение отправлено','s');
+    cmod();
+  } else {
+    showToast('❌ Ошибка отправки','e');
+  }
 }
  
 // ═══ NOTIFICATIONS ═══
