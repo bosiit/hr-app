@@ -1097,19 +1097,6 @@ async function submitCI(){
 // Не используем sendData — он закрывает приложение
 // Данные уже отправлены через fetch выше
  
-  setTimeout(()=>{
-    if(isOut){S.hasCO=true;showToast('✅ Check-out сохранён!','s');}
-    else{S.hasCI=true;showToast('✅ Check-in сохранён!','s');}
-    S.loc=null; S.photo=null;
-    resetPhoto();
-    document.getElementById('inp-comment').value='';
-    btn.textContent='✅ Подтвердить'; btn.disabled=false;
-    const emp=EMPS.find(e=>e.id===S.user.id);
-    if(emp){if(isOut)emp.co=true;else emp.ci=true;}
-    eTab('home');
-  },1200);
-}
- 
 // ═══ FINES ═══
 function loadFines(period){
   document.querySelectorAll('#sc-fines .tab').forEach((t,i)=>t.classList.toggle('on',i===(period==='cur'?0:1)));
