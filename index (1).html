@@ -1081,22 +1081,6 @@ async function submitCI(){
   // Отправить в Apps Script
   fetch(API + '?' + params.toString(), {mode:'no-cors'});
   
-  // Данные для бота (Telegram WebApp)
-  if(window.Telegram?.WebApp?.sendData){
-    const ciData = {
-      checkin_from_app: true,
-      action: isOut?'checkout':'checkin',
-      telegramId: S.user.id,
-      name: S.user.name,
-      location: S.loc==='remote'?'remote':(S.loc?S.loc.url:''),
-      comment,
-      timestamp: new Date().toISOString(),
-      outsideOffice: S.locOutside||false,
-      distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
-    };
-    Telegram.WebApp.sendData(JSON.stringify(ciData));
-  }
-  
   setTimeout(()=>{
     if(isOut){S.hasCO=true;showToast('✅ Check-out сохранён!','s');}
     else{S.hasCI=true;showToast('✅ Check-in сохранён!','s');}
