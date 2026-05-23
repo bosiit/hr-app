@@ -645,7 +645,7 @@ select.inp{cursor:pointer;}
 // ═══ CONFIG ═══
 const ADMIN_IDS = ['5641084826','77670451'];
 const OFFICE = {lat:41.26464, lng:69.23008, r:100};
-const API = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbwKQmse-MEoDtzmNfeNJjov-oTykzCA2Lj3k6ciwlFgb3IFk1zgoVyckeWSW31ko-h4/exec'; 
+const API = 'https://script.google.com/macros/s/AKfycbwKQmse-MEoDtzmNfeNJjov-oTykzCA2Lj3k6ciwlFgb3IFk1zgoVyckeWSW31ko-h4/exec';
 // ═══ STATE ═══
 const S = {
   lang: localStorage.getItem('hr_lang')||'ru',
@@ -1161,15 +1161,6 @@ async function submitAdv(){
   }
 }
  
-  setTimeout(()=>{
-    showToast('✅ Заявка на аванс отправлена!','s');
-    document.getElementById('inp-adv-amount').value='';
-    S.meth=null;
-    document.getElementById('meth-card').className='btn bg mb0';
-    document.getElementById('meth-cash').className='btn bg mb0';
-    eTab('more');
-  },1000);
-}
  
 // ═══ SALARY ═══
 function loadSalary(){
@@ -1215,12 +1206,6 @@ async function submitAnon(){
   } else {
     showToast('❌ Ошибка отправки','e');
   }
-}
- 
-  setTimeout(()=>{
-    showToast('✅ Сообщение отправлено анонимно!','s');
-    document.getElementById('inp-anon').value=''; updAnonCnt(); eTab('more');
-  },1000);
 }
  
 // ═══ HISTORY (from API) ═══
