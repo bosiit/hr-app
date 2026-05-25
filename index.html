@@ -954,8 +954,11 @@ async function enterApp() {
     
     await loadFinesFromAPI();
     await loadAdvancesFromAPI();
+    showSc('sc-splash');
+
+    await loadHome();
+
     showSc('sc-home');
-    loadHome();
   }
 }
  
@@ -974,8 +977,11 @@ function eTab(tab) {
   const n=document.getElementById('en-'+tab); if(n) n.classList.add('on');
   
   if(tab==='home') { 
-    showSc('sc-home'); 
-    loadHome(); // ← это теперь async и перезагружает данные
+    showSc('sc-splash');
+
+    loadHome().then(() => {
+      showSc('sc-home');
+    }); // ← это теперь async и перезагружает данные
   }
   else if(tab==='checkin') { showSc('sc-checkin'); loadCIScreen(); }
   else if(tab==='fines') { showSc('sc-fines'); loadFines('cur'); }
