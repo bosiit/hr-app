@@ -960,7 +960,7 @@ function eTab(tab) {
 async function loadHome() {
   if(!S.user) return;
   
-  // ← Загружаем только данные о зарплате, БЕЗ посещаемости
+  // 1. Загрузить баланс
   const d = await apiGet('getEmployees');
   if(d.ok) {
     const emp = d.employees.find(e => e.id === S.user.id);
@@ -972,10 +972,27 @@ async function loadHome() {
     }
   }
   
-  // ← Берём посещаемость из УЖЕ загруженных EMPS (не перезагружаем!)
-  const emp = EMPS.find(e => e.id === S.user.id) || S.user;
-  S.hasCI = emp.ci || false;
-  S.hasCO = emp.co || false;
+  // 2. Загрузить статус посещаемости с сервера
+  const attData = await apiGet('getAttendance');
+  if(attData.ok) {
+    const userAtt = attData.attendance[S.user.id];
+    if(userAtt) {
+      S.hasCI = userAtt.ci || false;
+      S.hasCO = userAtt.co || false;
+      
+      // Обновить в EMPS тоже
+      const emp = EMPS.find(e => e.id === S.user.id);
+      if(emp) {
+        emp.ci = userAtt.ci || false;
+        emp.co = userAtt.co || false;
+        emp.late = userAtt.late || false;
+        emp.ciTime = userAtt.ciTime || null;
+      }
+    } else {
+      S.hasCI = false;
+      S.hasCO = false;
+    }
+  }
   
   const now = new Date();
   se('home-date', now.toLocaleDateString(S.lang==='ru'?'ru-RU':'uz-UZ',{weekday:'long',day:'numeric',month:'long'}));
