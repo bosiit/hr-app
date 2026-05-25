@@ -957,28 +957,31 @@ function eTab(tab) {
 // ═══ HOME ═══
 // ═══ HOME ═══
 
-  async function loadHome() {
+async function loadHome() {
   if(!S.user) return;
   
-  // ← КРИТИЧНО: перезагрузить данные сотрудников
-  await loadEmpsFromAPI();
-  
-  const emp = EMPS.find(e => e.id === S.user.id);
-  if(emp) {
-    S.user.salary = emp.salary || 0;
-    S.user.balance = emp.balance || 0;
-    S.user.status = emp.status || 'active';
-    localStorage.setItem('hr_user', JSON.stringify(S.user));
+  // ← Загружаем только данные о зарплате, БЕЗ посещаемости
+  const d = await apiGet('getEmployees');
+  if(d.ok) {
+    const emp = d.employees.find(e => e.id === S.user.id);
+    if(emp) {
+      S.user.salary = emp.salary || 0;
+      S.user.balance = emp.balance || 0;
+      S.user.status = emp.status || 'active';
+      localStorage.setItem('hr_user', JSON.stringify(S.user));
+    }
   }
+  
+  // ← Берём посещаемость из УЖЕ загруженных EMPS (не перезагружаем!)
+  const emp = EMPS.find(e => e.id === S.user.id) || S.user;
+  S.hasCI = emp.ci || false;
+  S.hasCO = emp.co || false;
   
   const now = new Date();
   se('home-date', now.toLocaleDateString(S.lang==='ru'?'ru-RU':'uz-UZ',{weekday:'long',day:'numeric',month:'long'}));
   se('home-av', S.user.name.charAt(0).toUpperCase());
   se('home-name', S.user.name);
   se('home-role', S.user.status==='remote'?'🏠 Удалённо':'🏢 Офис');
- 
-  S.hasCI = emp?.ci || false;
-  S.hasCO = emp?.co || false;
  
   document.getElementById('home-sbar').innerHTML = `
     <div class="sp ${S.hasCI?'ok':'pend'}"><div class="si">${S.hasCI?'✅':'⏳'}</div><div class="sl">Check-in</div><div class="sv">${S.hasCI?'Выполнен':'Нужен'}</div></div>
@@ -1216,7 +1219,6 @@ async function submitCI(){
   const isOut=S.hasCI&&!S.hasCO;
   const comment=document.getElementById('inp-comment').value.trim();
  
-  // Данные для Apps Script (GET)
   const params = new URLSearchParams({
     action: 'saveCheckin',
     telegramId: S.user.id,
@@ -1228,18 +1230,29 @@ async function submitCI(){
     distance: (S.loc&&S.loc!=='remote')?Math.round(calcDist(S.loc.lat,S.loc.lng,OFFICE.lat,OFFICE.lng)):0
   });
   
-  // Отправить в Apps Script
   fetch(API + '?' + params.toString(), {mode:'no-cors'});
   
   setTimeout(()=>{
-    if(isOut){S.hasCO=true;showToast('✅ Check-out сохранён!','s');}
-    else{S.hasCI=true;showToast('✅ Check-in сохранён!','s');}
+    if(isOut){
+      S.hasCO=true;
+      showToast('✅ Check-out сохранён!','s');
+    } else {
+      S.hasCI=true;
+      showToast('✅ Check-in сохranён!','s');
+    }
+    
     S.loc=null; S.photo=null;
     resetPhoto();
     document.getElementById('inp-comment').value='';
     btn.textContent='✅ Подтвердить'; btn.disabled=false;
+    
+    // ← ОБНОВИТЬ СТАТУС В EMPS
     const emp=EMPS.find(e=>e.id===S.user.id);
-    if(emp){if(isOut)emp.co=true;else emp.ci=true;}
+    if(emp){
+      if(isOut) emp.co=true;
+      else emp.ci=true;
+    }
+    
     eTab('home');
   },1200);
 }
