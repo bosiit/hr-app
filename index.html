@@ -944,7 +944,11 @@ function eTab(tab) {
     const n=document.getElementById('en-'+t); if(n) n.classList.remove('on');
   });
   const n=document.getElementById('en-'+tab); if(n) n.classList.add('on');
-  if(tab==='home') { showSc('sc-home'); loadHome(); }
+  
+  if(tab==='home') { 
+    showSc('sc-home'); 
+    loadHome(); // ← это теперь async и перезагружает данные
+  }
   else if(tab==='checkin') { showSc('sc-checkin'); loadCIScreen(); }
   else if(tab==='fines') { showSc('sc-fines'); loadFines('cur'); }
   else if(tab==='more') showSc('sc-more');
@@ -952,14 +956,19 @@ function eTab(tab) {
  
 // ═══ HOME ═══
 // ═══ HOME ═══
-function loadHome() {
+
+  async function loadHome() {
   if(!S.user) return;
-   // ← ДОБАВИТЬ: обновить баланс из EMPS перед отрисовкой
+  
+  // ← КРИТИЧНО: перезагрузить данные сотрудников
+  await loadEmpsFromAPI();
+  
   const emp = EMPS.find(e => e.id === S.user.id);
   if(emp) {
     S.user.salary = emp.salary || 0;
     S.user.balance = emp.balance || 0;
     S.user.status = emp.status || 'active';
+    localStorage.setItem('hr_user', JSON.stringify(S.user));
   }
   
   const now = new Date();
@@ -968,9 +977,8 @@ function loadHome() {
   se('home-name', S.user.name);
   se('home-role', S.user.status==='remote'?'🏠 Удалённо':'🏢 Офис');
  
-  const emp = EMPS.find(e=>e.id===S.user.id)||S.user;
-  S.hasCI = emp.ci||false;
-  S.hasCO = emp.co||false;
+  S.hasCI = emp?.ci || false;
+  S.hasCO = emp?.co || false;
  
   document.getElementById('home-sbar').innerHTML = `
     <div class="sp ${S.hasCI?'ok':'pend'}"><div class="si">${S.hasCI?'✅':'⏳'}</div><div class="sl">Check-in</div><div class="sv">${S.hasCI?'Выполнен':'Нужен'}</div></div>
@@ -1022,6 +1030,7 @@ function loadHome() {
   se('home-fines', totalFines+'$');
   se('home-bal', (S.user.balance||0)+'$');
 }
+  
 // ═══ CHECK-IN FLOW ═══
 function loadCIScreen() {
   S.ciStep=1; renderSteps(); showCIStep(1);
