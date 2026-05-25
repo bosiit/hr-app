@@ -92,7 +92,22 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,san
   box-shadow:0 2px 12px rgba(0,0,0,.15);
 }
 .ctitle{font-size:11px;color:var(--text2);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px;}
-.btn{width:100%;padding:15px;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s;margin-bottom:10px;}
+.btn{
+  width:100%;
+  padding:15px;
+  border:none;
+  border-radius:var(--r);
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  transition:transform .1s;
+  margin-bottom:10px;
+  min-height:52px;
+}
 .btn:active{transform:scale(.97);}
 .btn:last-child{margin-bottom:0;}
 .bp{background:linear-gradient(135deg,#FF9500,#FFB340);color:#fff;box-shadow:0 4px 16px rgba(255,149,0,.25);}
@@ -418,8 +433,21 @@ select.inp{cursor:pointer;}
       <div class="ig">
         <label class="il">Способ получения</label>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-          <button class="btn bg mb0" id="meth-card" onclick="selMeth('card')">💳 Картой</button>
-          <button class="btn bg mb0" id="meth-cash" onclick="selMeth('cash')">💵 Наличными</button>
+          <button
+            class="btn bg mb0"
+            id="meth-card"
+            onclick="selMeth('card')"
+            style="height:56px;">
+            💳 Картой
+          </button>
+
+           <button
+            class="btn bg mb0"
+            id="meth-cash"
+            onclick="selMeth('cash')"
+            style="height:56px;">
+            💵 Наличными
+          </button>
         </div>
       </div>
       <div class="ig mb0"><label class="il">Комментарий</label><textarea class="inp" id="inp-adv-comment" rows="3" placeholder="Необязательно..."></textarea></div>
